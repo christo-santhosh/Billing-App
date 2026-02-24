@@ -1,0 +1,60 @@
+const BASE_URL = 'http://localhost:8000/api';
+
+/**
+ * Helper function to handle API calls
+ */
+async function fetchAPI(endpoint, options = {}) {
+    const url = `${BASE_URL}${endpoint}`;
+
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
+
+    const config = {
+        ...options,
+        headers: {
+            ...defaultHeaders,
+            ...options.headers
+        }
+    };
+
+    try {
+        const response = await fetch(url, config);
+
+        // Handle PDF downloads specially
+        if (options.isDownload) {
+            if (!response.ok) throw new Error('Failed to download file');
+            return await response.blob();
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('API Error:', data);
+            throw new Error(data.message || 'Something went wrong');
+        }
+
+        // DRF paginated responses return { count, next, previous, results }
+        // We generally just want the results for our lists
+        return data.results !== undefined ? data.results : data;
+    } catch (error) {
+        console.error(`Error fetching ${endpoint}:`, error);
+        throw error;
+    }
+}
+
+// Global utility for formatting currency
+function formatCurrency(amount) {
+    return '₹' + Number(amount).toFixed(2);
+}
+
+// Global utility for formatting dates
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    }).format(date);
+}

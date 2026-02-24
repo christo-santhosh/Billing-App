@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Church Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#16a34a",
+                        "primary-dark": "#15803d",
+                        "accent": "#dcfce7",
+                        "border-green": "#bbf7d0",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 font-display text-slate-900 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <div id="sidebar"
+        class="hidden md:flex flex-col w-64 bg-white border-r border-border-green h-full shrink-0 absolute md:relative z-50 transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-sm">
+        <div class="px-6 py-5 flex items-center justify-between border-b border-border-green">
+            <h2 class="text-xl font-bold text-green-800 tracking-tight flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">church</span>
+                Church Portal
+            </h2>
+            <button id="closeSidebar" class="md:hidden text-slate-400 hover:text-primary">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <nav class="flex-1 flex flex-col gap-1 p-4">
+            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold" href="index.html">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="pos.html">
+                <span class="material-symbols-outlined">point_of_sale</span> POS Billing
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="inventory.html">
+                <span class="material-symbols-outlined">inventory_2</span> Inventory
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="families.html">
+                <span class="material-symbols-outlined">groups</span> Members &amp; Wards
+            </a>
+        </nav>
+    </div>
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header
+            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-border-green px-4 py-3 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+                <button id="openSidebar"
+                    class="md:hidden p-2 -ml-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
+                    <span class="material-symbols-outlined text-[24px]">menu</span>
+                </button>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="relative p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
+                    <span class="material-symbols-outlined text-[24px]">notifications</span>
+                    <span class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+                </button>
+                <div
+                    class="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-primary-dark font-bold text-sm border border-primary/20">
+                    AD</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 w-full">
+
+            <div id="loadingIndicator" class="text-center py-10 text-slate-400">Loading metrics...</div>
+
+            <div id="dashboardContent" class="hidden flex-col gap-6">
+                <!-- Summary Cards -->
+                <div
+                    class="flex overflow-x-auto gap-4 pb-2 no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
+                    <!-- Revenue -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">payments</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">currency_rupee</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Total Revenue
+                                (All Time)</p>
+                            <h3 id="statTotalRevenue" class="text-2xl font-extrabold text-slate-900">₹--</h3>
+                        </div>
+                    </div>
+                    <!-- Top Ward -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">church</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">groups</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Top Performing
+                                Ward</p>
+                            <h3 id="statTopWard" class="text-xl font-extrabold text-slate-900 truncate">----</h3>
+                        </div>
+                    </div>
+                    <!-- Total Wards -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">location_city</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">home_work</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Total Wards
+                            </p>
+                            <h3 id="statTotalWards" class="text-2xl font-extrabold text-slate-900">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Trends Chart -->
+                <div
+                    class="bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Revenue Trends</h3>
+                            <p class="text-sm text-slate-500">Income over time</p>
+                        </div>
+                        <div class="flex bg-slate-50 p-1 rounded-lg self-start sm:self-auto border border-slate-100">
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Week</button>
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded bg-white text-primary-dark shadow-sm border border-slate-100">Month</button>
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Year</button>
+                        </div>
+                    </div>
+                    <div class="relative h-48 w-full mt-2">
+                        <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 50">
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="0" y2="0" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="12.5" y2="12.5" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="25" y2="25" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="37.5" y2="37.5" />
+                            <defs>
+                                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#16a34a" stop-opacity="0.2" />
+                                    <stop offset="100%" stop-color="#16a34a" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <path
+                                d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5 L100,50 L0,50 Z"
+                                fill="url(#gradient)" />
+                            <path d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5" fill="none"
+                                stroke="#16a34a" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
+                            <circle class="fill-white stroke-green-700" cx="30" cy="30" r="1.5" stroke-width="1" />
+                            <circle class="fill-white stroke-green-700" cx="60" cy="20" r="1.5" stroke-width="1" />
+                            <circle class="fill-white stroke-green-700" cx="90" cy="10" r="1.5" stroke-width="1" />
+                        </svg>
+                    </div>
+                    <div class="flex justify-between mt-2 text-xs text-slate-400 font-medium">
+                        <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
+                    </div>
+                </div>
+
+                <!-- Ward-wise Analysis -->
+                <div
+                    class="bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green">
+                    <h3 class="text-lg font-bold text-slate-900 mb-6">Ward Revenue Analysis</h3>
+                    <div id="wardBreakdownList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        document.getElementById('openSidebar')?.addEventListener('click', () => {
+            sidebar.classList.remove('hidden', '-translate-x-full');
+            overlay.classList.remove('hidden');
+        });
+        document.getElementById('closeSidebar')?.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+        overlay?.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+    </script>
+</body>
+
+</html>

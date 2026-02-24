@@ -1,0 +1,2393 @@
+
+================================================================================
+File: .\dump_project.py
+================================================================================
+
+import os
+
+# Set your project root (current folder). test
+project_root = "."
+
+# Output file
+output_file = "project_dump.txt"
+
+# File extensions to include when dumping all files
+include_exts = [".py", ".html", ".css", ".js", ".json", ".txt", ".md"]
+
+# 🔧 If you want only specific files, list them here by name
+# Example: only_files = ["views.py", "urls.py", "login.html"]
+only_files = []   # put filenames here
+
+with open(output_file, "w", encoding="utf-8") as outfile:
+    for root, dirs, files in os.walk(project_root):
+        if "venv" in dirs:
+            dirs.remove("venv")
+        if "__pycache__" in dirs:
+            dirs.remove("__pycache__")
+
+        for file in files:
+            # ✅ If only_files is set, include only those filenames
+            if only_files and file not in only_files:
+                continue
+
+            # Otherwise filter by extension
+            if not only_files and not any(file.endswith(ext) for ext in include_exts):
+                continue
+
+            filepath = os.path.join(root, file)
+            try:
+                with open(filepath, "r", encoding="utf-8") as infile:
+                    outfile.write(f"\n{'='*80}\n")
+                    outfile.write(f"File: {filepath}\n")
+                    outfile.write(f"{'='*80}\n\n")
+                    outfile.write(infile.read())
+                    outfile.write("\n\n")
+            except Exception as e:
+                outfile.write(f"\n[Could not read {filepath}: {e}]\n")
+
+print(f"✅ File contents saved to {output_file}")
+print("ℹ️  Cleared only_files list after writing.")
+
+
+
+================================================================================
+File: .\manage.py
+================================================================================
+
+#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+import os
+import sys
+
+def main():
+    """Run administrative tasks."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'church_billing.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+if __name__ == '__main__':
+    main()
+
+
+
+================================================================================
+File: .\project_dump.txt
+================================================================================
+
+
+
+
+================================================================================
+File: .\requirements.txt
+================================================================================
+
+django>=4.2
+djangorestframework>=3.14
+django-cors-headers>=4.0
+reportlab>=4.0
+
+
+
+================================================================================
+File: .\billing\admin.py
+================================================================================
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import User, Ward, Family, Product, Invoice, InvoiceItem
+
+admin.site.register(User, UserAdmin)
+admin.site.register(Ward)
+admin.site.register(Family)
+admin.site.register(Product)
+
+class InvoiceItemInline(admin.TabularInline):
+    model = InvoiceItem
+    extra = 1
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    inlines = [InvoiceItemInline]
+    list_display = ('id', 'family', 'date', 'total_amount', 'payment_method')
+    list_filter = ('date', 'payment_method', 'family__ward')
+
+
+
+================================================================================
+File: .\billing\apps.py
+================================================================================
+
+from django.apps import AppConfig
+
+class BillingConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'billing'
+
+
+
+================================================================================
+File: .\billing\models.py
+================================================================================
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+
+class User(AbstractUser):
+    is_sub_admin = models.BooleanField(default=False)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+
+class Ward(models.Model):
+    ward_number = models.CharField(max_length=10, unique=True)
+    ward_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.ward_name} ({self.ward_number})"
+
+class Family(models.Model):
+    family_name = models.CharField(max_length=100)
+    head_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20)
+    ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name='families')
+
+    def __str__(self):
+        return self.family_name
+
+class Product(models.Model):
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock_quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=20, help_text="e.g., kg, pcs, ltr")
+
+    def __str__(self):
+        return self.name
+
+class Invoice(models.Model):
+    PAYMENT_CHOICES = [
+        ('CASH', 'Cash'),
+        ('UPI', 'UPI'),
+        ('CARD', 'Card'),
+    ]
+    family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='invoices')
+    date = models.DateTimeField(auto_now_add=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='CASH')
+
+    def update_total(self):
+        # Calculate total amount by summing up the price * quantity of all related items
+        total = sum(item.price * item.quantity for item in self.items.all())
+        self.total_amount = total
+        self.save()
+
+    def __str__(self):
+        return f"Invoice #{self.id} for {self.family}"
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  # Deduct stock only on creation
+            if self.product.stock_quantity < self.quantity:
+                raise ValidationError(f"Insufficient stock for {self.product.name}.")
+            self.product.stock_quantity -= self.quantity
+            self.product.save()
+        super().save(*args, **kwargs)
+        self.invoice.update_total()
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name} (Invoice #{self.invoice.id})"
+
+
+
+================================================================================
+File: .\billing\serializers.py
+================================================================================
+
+from rest_framework import serializers
+from .models import User, Ward, Family, Product, Invoice, InvoiceItem
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'is_sub_admin', 'phone_number']
+
+class WardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ward
+        fields = '__all__'
+
+class FamilySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Family
+        fields = '__all__'
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceItem
+        fields = ['id', 'product', 'quantity', 'price']
+        read_only_fields = ['price']
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    items = InvoiceItemSerializer(many=True, required=False)
+
+    class Meta:
+        model = Invoice
+        fields = ['id', 'family', 'date', 'total_amount', 'payment_method', 'items']
+        read_only_fields = ['total_amount', 'date']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        invoice = Invoice.objects.create(**validated_data)
+        for item_data in items_data:
+            product = item_data['product']
+            quantity = item_data['quantity']
+            # Default price to product current price at the time of invoice creation
+            price = product.price
+            InvoiceItem.objects.create(invoice=invoice, product=product, quantity=quantity, price=price)
+        return invoice
+
+
+
+================================================================================
+File: .\billing\urls.py
+================================================================================
+
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import WardViewSet, FamilyViewSet, ProductViewSet, InvoiceViewSet, AnalyticsViewSet
+
+router = DefaultRouter()
+router.register(r'wards', WardViewSet)
+router.register(r'families', FamilyViewSet)
+router.register(r'products', ProductViewSet)
+router.register(r'invoices', InvoiceViewSet)
+router.register(r'analytics', AnalyticsViewSet, basename='analytics')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+
+
+================================================================================
+File: .\billing\utils.py
+================================================================================
+
+import io
+import urllib.parse
+from django.shortcuts import get_object_or_404
+from .models import Invoice
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+def generate_invoice_pdf(invoice_id):
+    """
+    Takes an invoice_id, uses ReportLab (to avoid complex WeasyPrint system-level
+    dependencies typically required on non-Linux platforms) and generates a PDF receipt.
+    """
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    family = invoice.family
+    ward = family.ward
+    
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    
+    y = 750
+    
+    # Header
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(100, y, "Church Community Billing System - Receipt")
+    y -= 30
+    
+    p.setFont("Helvetica", 12)
+    p.drawString(100, y, f"Invoice ID: {invoice.id}     Date: {invoice.date.strftime('%Y-%m-%d %H:%M')}")
+    y -= 20
+    p.drawString(100, y, f"Ward: {ward.ward_name} (Ward No: {ward.ward_number})")
+    y -= 20
+    p.drawString(100, y, f"Family: {family.family_name}")
+    y -= 20
+    p.drawString(100, y, f"Head Name: {family.head_name}")
+    y -= 30
+    
+    # Items
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(100, y, "Itemized List:")
+    y -= 20
+    
+    p.setFont("Helvetica", 12)
+    for item in invoice.items.all():
+        line_item_total = item.quantity * item.price
+        p.drawString(120, y, f"- {item.product.name}: {item.quantity} {item.product.unit} @ ₹{item.price} = ₹{line_item_total}")
+        y -= 20
+        # Pagination
+        if y < 100:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y = 750
+            
+    y -= 10
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(100, y, f"Total Amount: ₹{invoice.total_amount}")
+    
+    p.showPage()
+    p.save()
+    
+    buffer.seek(0)
+    return buffer
+
+def generate_whatsapp_link(invoice_id):
+    """
+    Formats a short bill summary and returns a URL-encoded wa.me WhatsApp link.
+    """
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    family = invoice.family
+    phone = str(family.phone_number)
+    
+    # Strip non-digits to ensure proper wa.me formatting
+    phone_clean = ''.join(filter(str.isdigit, phone))
+    
+    date_str = invoice.date.strftime('%B %d, %Y')
+    message = f"Hello {family.head_name}, your bill for {date_str} is ₹{invoice.total_amount}."
+    
+    encoded_message = urllib.parse.quote(message)
+    return f"https://wa.me/{phone_clean}?text={encoded_message}"
+
+
+
+================================================================================
+File: .\billing\views.py
+================================================================================
+
+from rest_framework import viewsets, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.http import FileResponse
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
+from .models import Ward, Family, Product, Invoice
+from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer
+from .utils import generate_invoice_pdf, generate_whatsapp_link
+
+class WardViewSet(viewsets.ModelViewSet):
+    queryset = Ward.objects.all()
+    serializer_class = WardSerializer
+
+class FamilyViewSet(viewsets.ModelViewSet):
+    queryset = Family.objects.all()
+    serializer_class = FamilySerializer
+    
+    # Implement SearchFilter so frontend can search by family_name, head_name, or phone_number
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['family_name', 'head_name', 'phone_number']
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    # ViewSet allows updating stock and price via PUT/PATCH out of the box.
+
+class InvoiceViewSet(viewsets.ModelViewSet):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+
+    @action(detail=True, methods=['get'])
+    def generate_pdf(self, request, pk=None):
+        """
+        Endpoint to automatically generate and return a PDF receipt for the invoice.
+        """
+        pdf_buffer = generate_invoice_pdf(pk)
+        return FileResponse(pdf_buffer, as_attachment=True, filename=f"Invoice_{pk}.pdf")
+
+    @action(detail=True, methods=['get'])
+    def get_whatsapp_link(self, request, pk=None):
+        """
+        Returns a URL-encoded wa.me WhatsApp link containing a short bill summary.
+        """
+        url = generate_whatsapp_link(pk)
+        return Response({'whatsapp_url': url})
+
+class AnalyticsViewSet(viewsets.ViewSet):
+    """
+    Custom API endpoints that return JSON data for analytics and reporting.
+    """
+
+    @action(detail=False, methods=['get'])
+    def time_based_revenue(self, request):
+        invoices = Invoice.objects.all()
+
+        weekly = invoices.annotate(week=TruncWeek('date')).values('week').annotate(
+            revenue=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-week')
+
+        monthly = invoices.annotate(month=TruncMonth('date')).values('month').annotate(
+            revenue=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-month')
+
+        annually = invoices.annotate(year=TruncYear('date')).values('year').annotate(
+            revenue=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-year')
+
+        return Response({
+            'weekly': weekly,
+            'monthly': monthly,
+            'annually': annually
+        })
+
+    @action(detail=False, methods=['get'])
+    def ward_wise_analysis(self, request):
+        # Total revenue generated per Ward and the Ward that made the most purchases
+        ward_data = Ward.objects.annotate(
+            total_revenue=Sum('families__invoices__total_amount'),
+            purchase_count=Count('families__invoices')
+        ).values('ward_name', 'total_revenue', 'purchase_count').order_by('-total_revenue')
+
+        ward_most_purchases = max(ward_data, key=lambda x: x['purchase_count']) if ward_data else None
+
+        return Response({
+            'ward_revenue': list(ward_data),
+            'ward_with_most_purchases': ward_most_purchases
+        })
+
+
+
+================================================================================
+File: .\billing\__init__.py
+================================================================================
+
+
+
+
+================================================================================
+File: .\billing\migrations\0001_initial.py
+================================================================================
+
+# Generated by Django 6.0.2 on 2026-02-23 15:32
+
+import django.contrib.auth.models
+import django.contrib.auth.validators
+import django.db.models.deletion
+import django.utils.timezone
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        ('auth', '0012_alter_user_first_name_max_length'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Family',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('family_name', models.CharField(max_length=100)),
+                ('head_name', models.CharField(max_length=100)),
+                ('phone_number', models.CharField(max_length=20)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Product',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100)),
+                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('stock_quantity', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('unit', models.CharField(help_text='e.g., kg, pcs, ltr', max_length=20)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Ward',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('ward_number', models.CharField(max_length=10, unique=True)),
+                ('ward_name', models.CharField(max_length=100)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='User',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('password', models.CharField(max_length=128, verbose_name='password')),
+                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
+                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()], verbose_name='username')),
+                ('first_name', models.CharField(blank=True, max_length=150, verbose_name='first name')),
+                ('last_name', models.CharField(blank=True, max_length=150, verbose_name='last name')),
+                ('email', models.EmailField(blank=True, max_length=254, verbose_name='email address')),
+                ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
+                ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
+                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
+                ('is_sub_admin', models.BooleanField(default=False)),
+                ('phone_number', models.CharField(blank=True, max_length=20, null=True)),
+                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
+                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Invoice',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('date', models.DateTimeField(auto_now_add=True)),
+                ('total_amount', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
+                ('payment_method', models.CharField(choices=[('CASH', 'Cash'), ('UPI', 'UPI'), ('CARD', 'Card')], default='CASH', max_length=20)),
+                ('family', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invoices', to='billing.family')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='InvoiceItem',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('quantity', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('invoice', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='billing.invoice')),
+                ('product', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='billing.product')),
+            ],
+        ),
+        migrations.AddField(
+            model_name='family',
+            name='ward',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='families', to='billing.ward'),
+        ),
+    ]
+
+
+
+================================================================================
+File: .\billing\migrations\__init__.py
+================================================================================
+
+
+
+
+================================================================================
+File: .\church_billing\asgi.py
+================================================================================
+
+import os
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'church_billing.settings')
+
+application = get_asgi_application()
+
+
+
+================================================================================
+File: .\church_billing\settings.py
+================================================================================
+
+import os
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'django-insecure-replace-this-with-a-real-secret-key-for-development'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ['*']
+
+# Application definition
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third party apps
+    'rest_framework',
+    'corsheaders',
+    
+    # Local apps
+    'billing.apps.BillingConfig',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'church_billing.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'church_billing.wsgi.application'
+
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+]
+
+AUTH_USER_MODEL = 'billing.User'
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Django REST Framework Settings
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,  # Increased for frontend list views
+}
+
+# CORS configuration
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
+
+================================================================================
+File: .\church_billing\urls.py
+================================================================================
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('billing.urls')),
+]
+
+
+
+================================================================================
+File: .\church_billing\wsgi.py
+================================================================================
+
+import os
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'church_billing.settings')
+
+application = get_wsgi_application()
+
+
+
+================================================================================
+File: .\church_billing\__init__.py
+================================================================================
+
+
+
+
+================================================================================
+File: .\frontend\families.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Families &amp; Wards Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#16a34a",
+                        "primary-dark": "#15803d",
+                        accent: "#dcfce7",
+                        "border-green": "#bbf7d0",
+                        "text-secondary": "#64748b",
+                    },
+                    fontFamily: { display: ["Manrope", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-display antialiased overflow-hidden h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-green h-full shrink-0 shadow-sm">
+        <div class="p-6 flex items-center gap-3 border-b border-border-green">
+            <div
+                class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-primary border border-border-green">
+                <span class="material-symbols-outlined text-xl">church</span>
+            </div>
+            <h1 class="text-lg font-bold tracking-tight text-slate-800">CommunityPOS</h1>
+        </div>
+        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-accent hover:text-primary transition-colors"
+                href="index.html">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="font-medium text-sm">Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-accent hover:text-primary transition-colors"
+                href="pos.html">
+                <span class="material-symbols-outlined">point_of_sale</span>
+                <span class="font-medium text-sm">POS Billing</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-accent text-primary font-bold border border-border-green"
+                href="families.html">
+                <span class="material-symbols-outlined">diversity_3</span>
+                <span class="font-medium text-sm">Families &amp; Wards</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-accent hover:text-primary transition-colors"
+                href="inventory.html">
+                <span class="material-symbols-outlined">inventory_2</span>
+                <span class="font-medium text-sm">Inventory</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden">
+        <!-- Header -->
+        <header
+            class="flex items-center justify-between px-6 md:px-8 py-5 border-b border-border-green bg-white z-20 shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Community Management</h1>
+                <p class="text-text-secondary text-sm hidden md:block">Manage wards, registered families, and member
+                    details.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden sm:block">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                    <input id="familySearch"
+                        class="pl-10 pr-4 py-2 bg-slate-50 border border-border-green rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary focus:border-primary outline-none w-64"
+                        placeholder="Search families..." type="text" />
+                </div>
+                <button onclick="openFamilyModal()"
+                    class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-md shadow-primary/20">
+                    <span class="material-symbols-outlined text-lg">add</span>
+                    Register Family
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
+            <div class="flex flex-col lg:flex-row gap-6 pb-20 md:pb-0">
+
+                <!-- Left: Ward Management -->
+                <div class="w-full lg:w-1/3 flex flex-col gap-6">
+                    <!-- Add Ward -->
+                    <div class="bg-white border border-border-green rounded-xl p-5 shadow-sm">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">add_location_alt</span>
+                            <h3 class="text-slate-800 font-bold text-lg">Add New Ward</h3>
+                        </div>
+                        <p class="text-text-secondary text-sm mb-4">Create a new ward for your congregation.</p>
+                        <form onsubmit="saveWard(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-text-secondary mb-1">Ward Number</label>
+                                <input id="wardNumber" required
+                                    class="w-full bg-slate-50 border border-border-green rounded-lg px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    placeholder="e.g. W-01" type="text" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-text-secondary mb-1">Ward Name</label>
+                                <input id="wardName" required
+                                    class="w-full bg-slate-50 border border-border-green rounded-lg px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    placeholder="e.g. North District" type="text" />
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary text-white font-bold py-2.5 rounded-lg hover:bg-primary-dark transition-colors shadow-md shadow-primary/20 mt-2">
+                                Create Ward
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Ward List -->
+                    <div class="bg-white border border-border-green rounded-xl overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-border-green flex justify-between items-center bg-slate-50">
+                            <h3 class="text-slate-800 font-bold">Wards List</h3>
+                        </div>
+                        <div id="wardsList" class="divide-y divide-border-green max-h-[400px] overflow-y-auto">
+                            <div class="p-4 text-center text-text-secondary text-sm">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Families List -->
+                <div class="w-full lg:w-2/3 flex flex-col gap-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-xl font-bold text-slate-800">Registered Families</h2>
+                        <span id="familiesCount"
+                            class="text-sm font-medium text-primary bg-accent px-3 py-1 rounded-full border border-border-green">--</span>
+                    </div>
+                    <div id="familiesListContainer" class="space-y-6">
+                        <div class="text-center py-10 text-text-secondary">Loading families...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Register Family Modal -->
+    <div id="familyModal"
+        class="fixed inset-0 z-50 bg-black/30 hidden items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white border border-border-green w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Register New Family</h2>
+                <button onclick="closeFamilyModal()" class="text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form onsubmit="saveFamily(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Family
+                        Name</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">badge</span>
+                        <input id="familyName" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="e.g. Johnson" type="text" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Head of
+                        Household</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">person</span>
+                        <input id="headName" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="e.g. Michael" type="text" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Phone
+                        Number</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">call</span>
+                        <input id="phoneNumber" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="+919876543210" type="tel" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Assign
+                        Ward</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">location_on</span>
+                        <select id="modalWardSelect" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-10 py-3 text-slate-900 appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                            <option value="">Select a Ward...</option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-primary text-white font-bold text-lg py-4 rounded-xl shadow-md shadow-primary/25 active:scale-95 transition-transform mt-6 hover:bg-primary-dark">
+                    Register Family
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/families.js"></script>
+</body>
+
+</html>
+
+
+================================================================================
+File: .\frontend\index.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Church Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#16a34a",
+                        "primary-dark": "#15803d",
+                        "accent": "#dcfce7",
+                        "border-green": "#bbf7d0",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 font-display text-slate-900 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <div id="sidebar"
+        class="hidden md:flex flex-col w-64 bg-white border-r border-border-green h-full shrink-0 absolute md:relative z-50 transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-sm">
+        <div class="px-6 py-5 flex items-center justify-between border-b border-border-green">
+            <h2 class="text-xl font-bold text-green-800 tracking-tight flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">church</span>
+                Church Portal
+            </h2>
+            <button id="closeSidebar" class="md:hidden text-slate-400 hover:text-primary">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <nav class="flex-1 flex flex-col gap-1 p-4">
+            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold" href="index.html">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="pos.html">
+                <span class="material-symbols-outlined">point_of_sale</span> POS Billing
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="inventory.html">
+                <span class="material-symbols-outlined">inventory_2</span> Inventory
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
+                href="families.html">
+                <span class="material-symbols-outlined">groups</span> Members &amp; Wards
+            </a>
+        </nav>
+    </div>
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header
+            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-border-green px-4 py-3 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+                <button id="openSidebar"
+                    class="md:hidden p-2 -ml-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
+                    <span class="material-symbols-outlined text-[24px]">menu</span>
+                </button>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="relative p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
+                    <span class="material-symbols-outlined text-[24px]">notifications</span>
+                    <span class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+                </button>
+                <div
+                    class="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-primary-dark font-bold text-sm border border-primary/20">
+                    AD</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 w-full">
+
+            <div id="loadingIndicator" class="text-center py-10 text-slate-400">Loading metrics...</div>
+
+            <div id="dashboardContent" class="hidden flex-col gap-6">
+                <!-- Summary Cards -->
+                <div
+                    class="flex overflow-x-auto gap-4 pb-2 no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
+                    <!-- Revenue -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">payments</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">currency_rupee</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Total Revenue
+                                (All Time)</p>
+                            <h3 id="statTotalRevenue" class="text-2xl font-extrabold text-slate-900">₹--</h3>
+                        </div>
+                    </div>
+                    <!-- Top Ward -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">church</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">groups</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Top Performing
+                                Ward</p>
+                            <h3 id="statTopWard" class="text-xl font-extrabold text-slate-900 truncate">----</h3>
+                        </div>
+                    </div>
+                    <!-- Total Wards -->
+                    <div
+                        class="snap-center shrink-0 w-[85vw] sm:w-auto bg-white p-5 rounded-2xl shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green flex flex-col justify-between h-36 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-[80px] text-primary">location_city</span>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <div class="p-2 bg-accent rounded-lg text-primary-dark">
+                                <span class="material-symbols-outlined text-[20px]">home_work</span>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Total Wards
+                            </p>
+                            <h3 id="statTotalWards" class="text-2xl font-extrabold text-slate-900">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Trends Chart -->
+                <div
+                    class="bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Revenue Trends</h3>
+                            <p class="text-sm text-slate-500">Income over time</p>
+                        </div>
+                        <div class="flex bg-slate-50 p-1 rounded-lg self-start sm:self-auto border border-slate-100">
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Week</button>
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded bg-white text-primary-dark shadow-sm border border-slate-100">Month</button>
+                            <button
+                                class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Year</button>
+                        </div>
+                    </div>
+                    <div class="relative h-48 w-full mt-2">
+                        <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 50">
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="0" y2="0" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="12.5" y2="12.5" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="25" y2="25" />
+                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
+                                x1="0" x2="100" y1="37.5" y2="37.5" />
+                            <defs>
+                                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#16a34a" stop-opacity="0.2" />
+                                    <stop offset="100%" stop-color="#16a34a" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <path
+                                d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5 L100,50 L0,50 Z"
+                                fill="url(#gradient)" />
+                            <path d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5" fill="none"
+                                stroke="#16a34a" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
+                            <circle class="fill-white stroke-green-700" cx="30" cy="30" r="1.5" stroke-width="1" />
+                            <circle class="fill-white stroke-green-700" cx="60" cy="20" r="1.5" stroke-width="1" />
+                            <circle class="fill-white stroke-green-700" cx="90" cy="10" r="1.5" stroke-width="1" />
+                        </svg>
+                    </div>
+                    <div class="flex justify-between mt-2 text-xs text-slate-400 font-medium">
+                        <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
+                    </div>
+                </div>
+
+                <!-- Ward-wise Analysis -->
+                <div
+                    class="bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(22,163,74,0.1)] border border-border-green">
+                    <h3 class="text-lg font-bold text-slate-900 mb-6">Ward Revenue Analysis</h3>
+                    <div id="wardBreakdownList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        document.getElementById('openSidebar')?.addEventListener('click', () => {
+            sidebar.classList.remove('hidden', '-translate-x-full');
+            overlay.classList.remove('hidden');
+        });
+        document.getElementById('closeSidebar')?.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+        overlay?.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+    </script>
+</body>
+
+</html>
+
+
+================================================================================
+File: .\frontend\inventory.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Inventory Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#16a34a",
+                        "primary-dark": "#15803d",
+                        "accent": "#dcfce7",
+                        "border-green": "#bbf7d0",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 font-display text-slate-900 overflow-hidden h-screen w-full flex">
+
+    <!-- Sidebar Icon Rail -->
+    <aside
+        class="w-20 bg-white border-r border-border-green flex flex-col items-center py-6 gap-8 shrink-0 z-20 shadow-sm">
+        <div
+            class="size-10 rounded-full bg-accent flex items-center justify-center text-primary shadow-sm border border-border-green">
+            <span class="material-symbols-outlined text-2xl">church</span>
+        </div>
+        <nav class="flex flex-col gap-6 w-full items-center flex-1">
+            <a href="index.html"
+                class="size-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-accent transition-colors"
+                title="Dashboard">
+                <span class="material-symbols-outlined">dashboard</span>
+            </a>
+            <a href="pos.html"
+                class="size-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-accent transition-colors"
+                title="POS">
+                <span class="material-symbols-outlined">point_of_sale</span>
+            </a>
+            <a href="inventory.html"
+                class="size-12 rounded-xl bg-accent text-primary flex items-center justify-center border border-border-green"
+                title="Inventory">
+                <span class="material-symbols-outlined">inventory_2</span>
+            </a>
+            <a href="families.html"
+                class="size-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-accent transition-colors"
+                title="Families">
+                <span class="material-symbols-outlined">group</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-50">
+        <!-- Header -->
+        <header
+            class="flex items-center justify-between px-6 py-4 bg-white border-b border-border-green shrink-0 shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold leading-tight tracking-tight text-slate-800">Inventory</h1>
+                <p class="text-sm text-slate-500">Manage church supplies &amp; stock</p>
+            </div>
+            <button onclick="openAddModal()"
+                class="bg-primary hover:bg-primary-dark text-white h-10 px-4 rounded-lg flex items-center gap-2 font-semibold shadow-md shadow-primary/20 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                <span class="hidden sm:inline">Add Product</span>
+            </button>
+        </header>
+
+        <!-- Search -->
+        <div class="px-6 py-4 bg-white border-b border-border-green">
+            <div class="relative flex-1">
+                <span
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined">search</span>
+                <input
+                    class="w-full h-11 pl-10 pr-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-400 shadow-sm"
+                    placeholder="Search items..." type="text" />
+            </div>
+        </div>
+
+        <!-- Inventory List -->
+        <div class="flex-1 overflow-y-auto px-6 py-4">
+            <div
+                class="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <div class="col-span-1">ID</div>
+                <div class="col-span-4">Product Name</div>
+                <div class="col-span-2 text-center">Stock</div>
+                <div class="col-span-2 text-center">Unit</div>
+                <div class="col-span-2 text-right">Price</div>
+                <div class="col-span-1"></div>
+            </div>
+
+            <div id="loadingIndicator" class="text-center py-10 text-slate-400">Loading inventory...</div>
+            <div id="inventoryList" class="flex flex-col gap-3"></div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="productModal"
+        class="absolute inset-0 z-50 flex items-center justify-center bg-black/30 hidden backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-border-green">
+            <div class="px-6 py-4 border-b border-border-green flex justify-between items-center">
+                <div>
+                    <h2 id="modalTitle" class="text-lg font-bold text-slate-900">Product</h2>
+                    <p class="text-xs text-slate-500">Fill in details below</p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="productForm" onsubmit="saveProduct(event)">
+                <input type="hidden" id="productId">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Product Name</label>
+                        <input id="productName" required
+                            class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
+                            type="text" placeholder="e.g. Candles" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Stock Level</label>
+                            <input id="productStock" required min="0" step="0.01"
+                                class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
+                                type="number" placeholder="Qty" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Unit</label>
+                            <input id="productUnit" required
+                                class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
+                                type="text" placeholder="pcs, kg" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Unit Price (₹)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
+                            <input id="productPrice" required min="0" step="0.01"
+                                class="w-full h-11 pl-8 pr-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
+                                type="number" placeholder="0.00" />
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 border-t border-border-green flex gap-3">
+                    <button type="button" onclick="closeModal()"
+                        class="flex-1 h-11 rounded-lg border border-border-green text-slate-700 font-semibold hover:bg-accent transition-colors">Cancel</button>
+                    <button type="submit"
+                        class="flex-1 h-11 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark shadow-md transition-all">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/inventory.js"></script>
+</body>
+
+</html>
+
+
+================================================================================
+File: .\frontend\pos.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>POS Billing Screen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#16a34a",
+                        "primary-dark": "#15803d",
+                        "accent": "#dcfce7",
+                        "border-green": "#bbf7d0",
+                        "surface-cart": "#f0fdf4",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 font-display text-slate-900 antialiased overflow-hidden h-screen flex flex-col">
+
+    <!-- Top App Bar -->
+    <header
+        class="flex items-center justify-between px-4 py-3 bg-white border-b border-border-green shrink-0 z-20 shadow-sm">
+        <a href="index.html" class="p-2 -ml-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-2xl">church</span>
+            <h1 class="text-lg font-bold tracking-tight text-slate-800">POS Terminal</h1>
+        </div>
+        <a href="inventory.html" class="p-2 -mr-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">inventory_2</span>
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Family Selection -->
+        <div class="px-4 py-3 shrink-0 bg-white z-10 border-b border-border-green">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Family for
+                Invoice</label>
+            <div class="relative">
+                <select id="familySelect"
+                    class="w-full bg-slate-50 border border-border-green rounded-xl h-11 px-4 text-sm font-medium focus:ring-2 focus:ring-primary appearance-none text-slate-800">
+                    <option value="">Loading families...</option>
+                </select>
+                <span
+                    class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="flex-1 overflow-y-auto px-4 pb-48 pt-3">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Add Items to Cart</h2>
+            <div id="productGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
+                <div class="col-span-full text-center py-10 text-slate-400">Loading products...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Cart Sheet -->
+    <div class="absolute bottom-0 left-0 right-0 z-30 bg-white border-t border-border-green rounded-t-2xl shadow-[0_-4px_20px_rgba(22,163,74,0.1)] transition-transform duration-300 transform translate-y-[calc(100%-70px)]"
+        id="cartSheet">
+        <div class="w-full flex justify-center pt-3 pb-1 cursor-pointer" id="cartHandle">
+            <div class="w-12 h-1.5 rounded-full bg-green-200"></div>
+        </div>
+
+        <div class="px-4 pb-4">
+            <!-- Cart Header -->
+            <div class="flex items-center justify-between mb-4 cursor-pointer" id="cartHeaderToggle">
+                <div class="flex items-center gap-2">
+                    <div class="bg-accent text-primary p-2 rounded-lg">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                    </div>
+                    <span class="text-slate-800 font-bold text-lg">Current Bill</span>
+                </div>
+                <span id="cartCount" class="px-2 py-1 bg-slate-100 text-xs font-medium text-slate-600 rounded-md">0
+                    Items</span>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cartItemsList" class="max-h-[30vh] overflow-y-auto mb-4 space-y-3 no-scrollbar">
+                <div class="text-center text-slate-400 text-sm py-4">Cart is empty</div>
+            </div>
+
+            <!-- Footer -->
+            <div class="border-t border-border-green pt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-slate-500 text-sm">Total Amount</span>
+                    <span id="cartTotal" class="text-2xl font-bold text-primary">₹0.00</span>
+                </div>
+                <button id="completeBillBtn"
+                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 px-6 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all active:scale-95 hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    Complete Bill
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl border border-border-green relative">
+            <button onclick="closeSuccessModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="flex flex-col items-center text-center">
+                <div class="h-16 w-16 rounded-full bg-accent flex items-center justify-center mb-4 text-primary">
+                    <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-1">Payment Successful!</h3>
+                <p id="successInvoiceText" class="text-sm text-slate-500 mb-6">Invoice created successfully.</p>
+                <div class="w-full space-y-3">
+                    <a id="whatsappLink" href="#" target="_blank"
+                        class="w-full flex items-center justify-center gap-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] py-3 text-white font-bold transition-colors">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path
+                                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                        </svg>
+                        Share to WhatsApp
+                    </a>
+                    <button id="downloadPdfBtn"
+                        class="w-full flex items-center justify-center gap-2 rounded-xl border border-border-green hover:bg-accent py-3 text-slate-700 font-medium transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">download</span>
+                        Download PDF
+                    </button>
+                    <button onclick="startNewTransaction()"
+                        class="w-full py-2 text-slate-400 hover:text-slate-700 text-sm">
+                        Start New Transaction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/pos.js"></script>
+</body>
+
+</html>
+
+
+================================================================================
+File: .\frontend\css\style.css
+================================================================================
+
+/* Common global styles */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+body {
+    min-height: max(884px, 100dvh);
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #bbf7d0;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #16a34a;
+}
+
+
+================================================================================
+File: .\frontend\js\api.js
+================================================================================
+
+const BASE_URL = 'http://localhost:8000/api';
+
+/**
+ * Helper function to handle API calls
+ */
+async function fetchAPI(endpoint, options = {}) {
+    const url = `${BASE_URL}${endpoint}`;
+
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
+
+    const config = {
+        ...options,
+        headers: {
+            ...defaultHeaders,
+            ...options.headers
+        }
+    };
+
+    try {
+        const response = await fetch(url, config);
+
+        // Handle PDF downloads specially
+        if (options.isDownload) {
+            if (!response.ok) throw new Error('Failed to download file');
+            return await response.blob();
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('API Error:', data);
+            throw new Error(data.message || 'Something went wrong');
+        }
+
+        // DRF paginated responses return { count, next, previous, results }
+        // We generally just want the results for our lists
+        return data.results !== undefined ? data.results : data;
+    } catch (error) {
+        console.error(`Error fetching ${endpoint}:`, error);
+        throw error;
+    }
+}
+
+// Global utility for formatting currency
+function formatCurrency(amount) {
+    return '₹' + Number(amount).toFixed(2);
+}
+
+// Global utility for formatting dates
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    }).format(date);
+}
+
+
+
+================================================================================
+File: .\frontend\js\dashboard.js
+================================================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Mobile Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const openSidebarBtn = document.getElementById('openSidebar');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+
+    function toggleSidebar() {
+        const isClosed = sidebar.classList.contains('-translate-x-full');
+        if (isClosed) {
+            sidebar.classList.remove('hidden', '-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            setTimeout(() => {
+                sidebar.classList.add('hidden');
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+    }
+
+    if (openSidebarBtn) openSidebarBtn.addEventListener('click', toggleSidebar);
+    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', toggleSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
+    // Load Dashboard Data
+    try {
+        const [wardAnalysis, wardsResponse] = await Promise.all([
+            fetchAPI('/analytics/ward_wise_analysis/'),
+            fetchAPI('/wards/')
+        ]);
+
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        document.getElementById('dashboardContent').classList.remove('hidden');
+        document.getElementById('dashboardContent').classList.add('flex');
+
+        // Populate Top Ward
+        if (wardAnalysis.ward_with_most_purchases) {
+            document.getElementById('statTopWard').textContent = wardAnalysis.ward_with_most_purchases.ward_name;
+        } else {
+            document.getElementById('statTopWard').textContent = "No data yet";
+        }
+
+        // Total Wards
+        document.getElementById('statTotalWards').textContent = Array.isArray(wardsResponse) ? wardsResponse.length : wardsResponse.count || 0;
+
+        // Calculate Total Revenue and Render List
+        let totalRevenueAllTime = 0;
+        const bdList = document.getElementById('wardBreakdownList');
+        bdList.innerHTML = '';
+
+        const colors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500', 'bg-blue-500'];
+
+        wardAnalysis.ward_revenue.forEach((ward, index) => {
+            const revenue = parseFloat(ward.total_revenue || 0);
+            totalRevenueAllTime += revenue;
+
+            const colorClass = colors[index % colors.length];
+            const itemHTML = `
+                <div class="flex items-center justify-between p-3 rounded-lg bg-background-dark border border-slate-800 hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full ${colorClass} ring-2 ring-white/10"></span>
+                        <span class="text-sm font-medium text-slate-200">${ward.ward_name}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-sm font-bold text-white">${formatCurrency(revenue)}</span>
+                        <span class="text-xs text-slate-500">${ward.purchase_count} Orders</span>
+                    </div>
+                </div>
+            `;
+            bdList.insertAdjacentHTML('beforeend', itemHTML);
+        });
+
+        document.getElementById('statTotalRevenue').textContent = formatCurrency(totalRevenueAllTime);
+
+    } catch (error) {
+        console.error("Dashboard failed to load:", error);
+        document.getElementById('loadingIndicator').textContent = "Failed to load dashboard data. Check backend connection.";
+        document.getElementById('loadingIndicator').className = "text-center py-10 text-red-500";
+    }
+});
+
+
+
+================================================================================
+File: .\frontend\js\families.js
+================================================================================
+
+// State
+let wards = [];
+let families = [];
+
+// DOM Elements
+const wardsList = document.getElementById('wardsList');
+const familiesListContainer = document.getElementById('familiesListContainer');
+const familiesCount = document.getElementById('familiesCount');
+const familySearch = document.getElementById('familySearch');
+const familyModal = document.getElementById('familyModal');
+const modalWardSelect = document.getElementById('modalWardSelect');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadData();
+
+    // Setup Search debounce
+    let searchTimeout;
+    if (familySearch) {
+        familySearch.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadFamilies(e.target.value);
+            }, 300);
+        });
+    }
+});
+
+async function loadData() {
+    try {
+        await Promise.all([loadWards(), loadFamilies()]);
+    } catch (e) {
+        console.error("Error loading data", e);
+    }
+}
+
+async function loadWards() {
+    try {
+        wards = await fetchAPI('/wards/');
+        renderWards();
+        populateWardSelects();
+    } catch (e) {
+        wardsList.innerHTML = '<div class="p-4 text-center text-red-500">Failed to load wards</div>';
+    }
+}
+
+async function loadFamilies(searchQuery = '') {
+    try {
+        let url = '/families/';
+        if (searchQuery) {
+            url += `?search=${encodeURIComponent(searchQuery)}`;
+        }
+        families = await fetchAPI(url);
+        renderFamilies();
+    } catch (e) {
+        familiesListContainer.innerHTML = '<div class="text-center py-10 text-red-500">Failed to load families</div>';
+    }
+}
+
+function renderWards() {
+    wardsList.innerHTML = '';
+
+    if (wards.length === 0) {
+        wardsList.innerHTML = '<div class="p-4 text-center text-text-secondary">No wards created yet.</div>';
+        return;
+    }
+
+    wards.forEach(ward => {
+        // Find family count locally
+        const wFamilies = families.filter(f => f.ward === ward.id);
+
+        const html = `
+        <div class="p-4 hover:bg-background-dark/50 transition-colors cursor-pointer group">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-white font-medium group-hover:text-primary transition-colors">${ward.ward_name}</span>
+                <span class="text-xs bg-border-dark text-text-secondary px-2 py-0.5 rounded-full">${ward.ward_number}</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-text-secondary">
+                <span class="material-symbols-outlined text-[14px]">groups</span>
+                ${wFamilies.length} Families Registered
+            </div>
+        </div>
+        `;
+        wardsList.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+function renderFamilies() {
+    familiesListContainer.innerHTML = '';
+    familiesCount.textContent = families.length;
+
+    if (families.length === 0) {
+        familiesListContainer.innerHTML = '<div class="text-center py-10 text-text-secondary">No families found.</div>';
+        return;
+    }
+
+    // Group families by ward
+    const familiesByWard = {};
+    wards.forEach(w => { familiesByWard[w.id] = []; });
+
+    // Fallback for families without a matching ward in state
+    familiesByWard['unassigned'] = [];
+
+    families.forEach(f => {
+        if (familiesByWard[f.ward]) {
+            familiesByWard[f.ward].push(f);
+        } else {
+            familiesByWard['unassigned'].push(f);
+        }
+    });
+
+    const colors = ['from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-600', 'from-orange-500 to-red-600', 'from-purple-500 to-pink-600'];
+
+    Object.keys(familiesByWard).forEach((wardId) => {
+        const wardFamilies = familiesByWard[wardId];
+        if (wardFamilies.length === 0) return;
+
+        const ward = wards.find(w => w.id.toString() === wardId);
+        const wardName = ward ? ward.ward_name : 'Unknown Ward';
+
+        let html = `
+        <div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden mb-6">
+            <div class="px-5 py-3 bg-border-dark/30 border-b border-border-dark flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-text-secondary">location_on</span>
+                    <h4 class="text-white font-bold">${wardName}</h4>
+                </div>
+                <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">${wardFamilies.length} Families</span>
+            </div>
+            <div class="divide-y divide-border-dark">
+        `;
+
+        wardFamilies.forEach(f => {
+            const initial = f.family_name ? f.family_name.charAt(0).toUpperCase() : '?';
+            const colorClass = colors[f.id % colors.length];
+
+            html += `
+                <div class="p-4 flex items-center justify-between hover:bg-background-dark/50 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-bold text-sm shadow-md">
+                            ${initial}
+                        </div>
+                        <div>
+                            <p class="text-white font-bold group-hover:text-primary transition-colors">The ${f.family_name} Family</p>
+                            <p class="text-text-secondary text-xs">Head: ${f.head_name} | ${f.phone_number}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            </div>
+        </div>
+        `;
+
+        familiesListContainer.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+function populateWardSelects() {
+    if (!modalWardSelect) return;
+
+    modalWardSelect.innerHTML = '<option value="">Select a Ward...</option>';
+    wards.forEach(w => {
+        modalWardSelect.insertAdjacentHTML('beforeend', `<option value="${w.id}">${w.ward_name} (${w.ward_number})</option>`);
+    });
+}
+
+// Modals and Forms
+function openFamilyModal() {
+    familyModal.classList.remove('hidden');
+    familyModal.classList.add('flex');
+}
+
+function closeFamilyModal() {
+    familyModal.classList.add('hidden');
+    familyModal.classList.remove('flex');
+}
+
+async function saveWard(e) {
+    e.preventDefault();
+    const payload = {
+        ward_number: document.getElementById('wardNumber').value,
+        ward_name: document.getElementById('wardName').value
+    };
+
+    try {
+        await fetchAPI('/wards/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        // Reset and Reload
+        document.getElementById('wardNumber').value = '';
+        document.getElementById('wardName').value = '';
+        await loadWards();
+        renderFamilies(); // Re-render to update grouping headers if needed
+
+        alert("Ward created successfully!");
+    } catch (err) {
+        alert("Failed to create ward. Number might not be unique.");
+    }
+}
+
+async function saveFamily(e) {
+    e.preventDefault();
+
+    const payload = {
+        family_name: document.getElementById('familyName').value,
+        head_name: document.getElementById('headName').value,
+        phone_number: document.getElementById('phoneNumber').value,
+        ward: document.getElementById('modalWardSelect').value
+    };
+
+    try {
+        await fetchAPI('/families/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        // Reset and Reload
+        document.getElementById('familyName').value = '';
+        document.getElementById('headName').value = '';
+        document.getElementById('phoneNumber').value = '';
+        document.getElementById('modalWardSelect').value = '';
+        closeFamilyModal();
+
+        await loadData();
+        alert("Family registered successfully!");
+    } catch (err) {
+        alert("Failed to register family.");
+    }
+}
+
+
+
+================================================================================
+File: .\frontend\js\inventory.js
+================================================================================
+
+// State
+let products = [];
+const modal = document.getElementById('productModal');
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadInventory();
+});
+
+async function loadInventory() {
+    try {
+        products = await fetchAPI('/products/');
+        renderInventory();
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    } catch (error) {
+        document.getElementById('loadingIndicator').textContent = "Failed to load inventory.";
+        document.getElementById('loadingIndicator').className = "text-center py-10 text-red-500";
+    }
+}
+
+function renderInventory() {
+    const list = document.getElementById('inventoryList');
+    list.innerHTML = '';
+
+    // Assign random icons based on ID for visual flair
+    const icons = ['cookie', 'light_mode', 'menu_book', 'wine_bar', 'cleaning_services', 'inventory_2'];
+    const colors = ['bg-green-50 text-green-700', 'bg-emerald-50 text-emerald-700', 'bg-teal-50 text-teal-700', 'bg-lime-50 text-lime-700', 'bg-green-100 text-green-800', 'bg-slate-50 text-slate-600'];
+
+    products.forEach(p => {
+        const iconIndex = p.id % icons.length;
+        const outOfStock = p.stock_quantity <= 0;
+        const stockColor = outOfStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+
+        const html = `
+        <div class="group bg-white dark:bg-[#111618] rounded-xl p-4 border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all shadow-sm">
+            <div class="flex items-center justify-between md:grid md:grid-cols-12 md:gap-4">
+                <div class="md:col-span-1 hidden md:block text-slate-500 text-sm">#${p.id}</div>
+                <div class="flex items-center gap-4 md:col-span-4">
+                    <div class="size-10 rounded-lg ${colors[iconIndex]} flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined">${icons[iconIndex]}</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-900 dark:text-white leading-tight">${p.name}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5 md:hidden">ID: #${p.id}</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end md:items-center md:flex-row md:contents">
+                    <div class="md:col-span-2 md:text-center mt-2 md:mt-0">
+                        <span class="text-xs text-slate-400 md:hidden mr-1">Stock:</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${stockColor}">
+                            ${p.stock_quantity}
+                        </span>
+                    </div>
+                    <div class="md:col-span-2 md:text-center hidden md:block text-sm text-slate-500">${p.unit}</div>
+                    <div class="md:col-span-2 md:text-right font-medium text-slate-900 dark:text-white mt-1 md:mt-0">${formatCurrency(p.price)}</div>
+                </div>
+                <div class="md:col-span-1 flex justify-end">
+                    <button onclick="editProduct(${p.id})" class="size-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                    </button>
+                    ${!outOfStock ? `
+                     <!--  Optional Add to stock quick button if you wanted it later  -->
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+        `;
+        list.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+function openAddModal() {
+    document.getElementById('productId').value = '';
+    document.getElementById('productName').value = '';
+    document.getElementById('productStock').value = '';
+    document.getElementById('productUnit').value = '';
+    document.getElementById('productPrice').value = '';
+    document.getElementById('modalTitle').textContent = 'Add Product';
+
+    modal.classList.remove('hidden');
+}
+
+function editProduct(id) {
+    const p = products.find(prod => prod.id === id);
+    if (!p) return;
+
+    document.getElementById('productId').value = p.id;
+    document.getElementById('productName').value = p.name;
+    document.getElementById('productStock').value = p.stock_quantity;
+    document.getElementById('productUnit').value = p.unit;
+    document.getElementById('productPrice').value = p.price;
+    document.getElementById('modalTitle').textContent = 'Edit Product';
+
+    modal.classList.remove('hidden');
+}
+
+function closeModal() {
+    modal.classList.add('hidden');
+}
+
+async function saveProduct(e) {
+    e.preventDefault();
+
+    const pId = document.getElementById('productId').value;
+    const payload = {
+        name: document.getElementById('productName').value,
+        stock_quantity: document.getElementById('productStock').value,
+        unit: document.getElementById('productUnit').value,
+        price: document.getElementById('productPrice').value
+    };
+
+    try {
+        if (pId) {
+            // Update
+            await fetchAPI(`/products/${pId}/`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+        } else {
+            // Create
+            await fetchAPI(`/products/`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+        closeModal();
+        await loadInventory(); // refresh list
+    } catch (err) {
+        alert("Failed to save. Check console.");
+    }
+}
+
+
+
+================================================================================
+File: .\frontend\js\pos.js
+================================================================================
+
+// State
+let products = [];
+let cart = [];
+let families = [];
+
+// DOM Elements
+const productGrid = document.getElementById('productGrid');
+const cartItemsList = document.getElementById('cartItemsList');
+const cartTotal = document.getElementById('cartTotal');
+const cartCount = document.getElementById('cartCount');
+const familySelect = document.getElementById('familySelect');
+const completeBillBtn = document.getElementById('completeBillBtn');
+const successModal = document.getElementById('successModal');
+const whatsappLink = document.getElementById('whatsappLink');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+const cartSheet = document.getElementById('cartSheet');
+const cartHeaderToggle = document.getElementById('cartHeaderToggle');
+const cartHandle = document.getElementById('cartHandle');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Bottom Sheet Toggle Logic
+    let isCartOpen = false;
+    const toggleCart = () => {
+        isCartOpen = !isCartOpen;
+        if (isCartOpen) {
+            cartSheet.classList.remove('translate-y-[calc(100%-70px)]');
+            cartSheet.classList.add('translate-y-0');
+        } else {
+            cartSheet.classList.remove('translate-y-0');
+            cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+        }
+    };
+
+    cartHeaderToggle.addEventListener('click', toggleCart);
+    cartHandle.addEventListener('click', toggleCart);
+    completeBillBtn.addEventListener('click', completeTransaction);
+    downloadPdfBtn.addEventListener('click', downloadCurrentPdf);
+
+    await Promise.all([loadProducts(), loadFamilies()]);
+    renderCart(); // init empty state
+});
+
+async function loadFamilies() {
+    try {
+        families = await fetchAPI('/families/');
+        familySelect.innerHTML = '<option value="">Select a family...</option>';
+        families.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = `${f.family_name} (${f.head_name})`;
+            familySelect.appendChild(opt);
+        });
+    } catch (e) {
+        console.error("Failed to load families", e);
+        familySelect.innerHTML = '<option value="">Error loading families</option>';
+    }
+}
+
+async function loadProducts() {
+    try {
+        products = await fetchAPI('/products/');
+        renderProducts();
+    } catch (e) {
+        productGrid.innerHTML = '<div class="col-span-full text-center py-10 text-red-500">Failed to load products.</div>';
+    }
+}
+
+function renderProducts() {
+    productGrid.innerHTML = '';
+
+    const icons = ['cookie', 'light_mode', 'menu_book', 'wine_bar', 'cleaning_services', 'inventory_2'];
+    const colors = ['bg-green-50 text-green-700', 'bg-emerald-50 text-emerald-700', 'bg-teal-50 text-teal-700', 'bg-lime-50 text-lime-700', 'bg-green-100 text-green-800', 'bg-slate-50 text-slate-600'];
+
+    products.forEach(p => {
+        if (p.stock_quantity <= 0) return;
+
+        const iconIndex = p.id % icons.length;
+
+        const html = `
+        <div onclick="addToCart(${p.id})" class="bg-white rounded-xl p-3 shadow-sm flex flex-col gap-2 group cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all select-none border border-border-green">
+            <div class="aspect-square w-full rounded-lg ${colors[iconIndex]} flex items-center justify-center overflow-hidden relative border border-white">
+                <span class="material-symbols-outlined text-4xl opacity-40">${icons[iconIndex]}</span>
+                <button class="absolute bottom-2 right-2 h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                </button>
+            </div>
+            <div>
+                <h3 class="font-bold text-sm leading-tight text-slate-800 truncate">${p.name}</h3>
+                <p class="text-xs text-slate-500 mt-1">${formatCurrency(p.price)} <span class="text-[10px] opacity-70">/${p.unit}</span></p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${p.stock_quantity} in stock</p>
+            </div>
+        </div>
+        `;
+        productGrid.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+
+function addToCart(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const existingItem = cart.find(item => item.product.id === productId);
+
+    if (existingItem) {
+        if (existingItem.quantity + 1 > product.stock_quantity) {
+            alert(`Only ${product.stock_quantity} ${product.unit} available in stock.`);
+            return;
+        }
+        existingItem.quantity += 1;
+    } else {
+        cart.push({ product: product, quantity: 1 });
+    }
+
+    renderCart();
+}
+
+function updateQuantity(productId, delta) {
+    const itemIndex = cart.findIndex(item => item.product.id === productId);
+    if (itemIndex > -1) {
+        const item = cart[itemIndex];
+        const newQuantity = item.quantity + delta;
+
+        if (newQuantity <= 0) {
+            cart.splice(itemIndex, 1);
+        } else if (newQuantity > item.product.stock_quantity) {
+            alert(`Only ${item.product.stock_quantity} available.`);
+        } else {
+            item.quantity = newQuantity;
+        }
+        renderCart();
+    }
+}
+
+function renderCart() {
+    cartItemsList.innerHTML = '';
+    let total = 0;
+
+    if (cart.length === 0) {
+        cartItemsList.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Cart is empty</div>';
+        completeBillBtn.disabled = true;
+    } else {
+        completeBillBtn.disabled = false;
+
+        cart.forEach(item => {
+            const itemTotal = item.product.price * item.quantity;
+            total += itemTotal;
+
+            const icons = ['cookie', 'light_mode', 'menu_book', 'wine_bar', 'cleaning_services', 'inventory_2'];
+            const colors = ['bg-green-50 text-green-700', 'bg-emerald-50 text-emerald-700', 'bg-teal-50 text-teal-700', 'bg-lime-50 text-lime-700', 'bg-green-100 text-green-800', 'bg-slate-50 text-slate-600'];
+            const iconIndex = item.product.id % icons.length;
+
+            const html = `
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg ${colors[iconIndex]} flex items-center justify-center shrink-0 border border-white">
+                    <span class="material-symbols-outlined text-[20px]">${icons[iconIndex]}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-baseline">
+                        <h4 class="text-sm font-medium text-slate-800 truncate">${item.product.name}</h4>
+                        <span class="text-sm font-bold text-primary">${formatCurrency(itemTotal)}</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-slate-400">${formatCurrency(item.product.price)}/${item.product.unit}</span>
+                        <div class="flex items-center gap-2 bg-slate-100 rounded-md px-1.5 py-0.5">
+                            <button onclick="updateQuantity(${item.product.id}, -1)" class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+                            <span class="text-xs font-mono text-slate-800 w-8 text-center">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.product.id}, 1)" class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">add</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+            cartItemsList.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    cartTotal.textContent = formatCurrency(total);
+    cartCount.textContent = `${cart.length} Request${cart.length !== 1 ? 's' : ''}`;
+}
+
+let lastInvoiceId = null;
+
+async function completeTransaction() {
+    const familyId = familySelect.value;
+
+    if (!familyId) {
+        alert("Please select a family for the invoice.");
+        // Expand cart to show family select if hidden (on mobile)
+        cartSheet.classList.remove('translate-y-0');
+        cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+        return;
+    }
+
+    if (cart.length === 0) return;
+
+    // Build Payload
+    const itemsPayload = cart.map(item => ({
+        product: item.product.id,
+        quantity: item.quantity
+    }));
+
+    const payload = {
+        family: familyId,
+        payment_method: "CASH",
+        items: itemsPayload
+    };
+
+    try {
+        completeBillBtn.disabled = true;
+        completeBillBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Processing...';
+
+        const response = await fetchAPI('/invoices/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        lastInvoiceId = response.id;
+
+        // Fetch Whatsapp Link
+        const waRes = await fetchAPI(`/invoices/${lastInvoiceId}/get_whatsapp_link/`);
+        whatsappLink.href = waRes.whatsapp_url;
+
+        // Show Success Modal
+        document.getElementById('successInvoiceText').textContent = `Transaction #${response.id} has been recorded successfully.`;
+        successModal.classList.remove('hidden');
+
+        // Refresh products stock locally
+        await loadProducts();
+
+    } catch (e) {
+        alert("Failed to process transaction. Please try again.");
+    } finally {
+        completeBillBtn.disabled = false;
+        completeBillBtn.innerHTML = '<span class="material-symbols-outlined">receipt_long</span> Complete Bill';
+    }
+}
+
+async function downloadCurrentPdf() {
+    if (!lastInvoiceId) return;
+
+    try {
+        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Downloading...';
+        downloadPdfBtn.disabled = true;
+
+        const blob = await fetchAPI(`/invoices/${lastInvoiceId}/generate_pdf/`, { isDownload: true });
+
+        // Create link and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Invoice_${lastInvoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+    } catch (e) {
+        alert("Failed to download PDF.");
+    } finally {
+        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">download</span> Download PDF';
+        downloadPdfBtn.disabled = false;
+    }
+}
+
+function closeSuccessModal() {
+    successModal.classList.add('hidden');
+    startNewTransaction(); // Reset cart behind the scenes
+}
+
+window.startNewTransaction = function () {
+    cart = [];
+    familySelect.value = '';
+    lastInvoiceId = null;
+    renderCart();
+    successModal.classList.add('hidden');
+
+    // Minimize cart sheet
+    cartSheet.classList.remove('translate-y-0');
+    cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+}
+
+
