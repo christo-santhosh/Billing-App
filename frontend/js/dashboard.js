@@ -8,12 +8,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     function toggleSidebar() {
         const isClosed = sidebar.classList.contains('-translate-x-full');
         if (isClosed) {
-            sidebar.classList.remove('hidden', '-translate-x-full');
+            sidebar.classList.remove('-translate-x-full');
             sidebarOverlay.classList.remove('hidden');
         } else {
             sidebar.classList.add('-translate-x-full');
             setTimeout(() => {
-                sidebar.classList.add('hidden');
                 sidebarOverlay.classList.add('hidden');
             }, 300);
         }

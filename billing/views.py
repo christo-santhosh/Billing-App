@@ -11,23 +11,29 @@ from .utils import generate_invoice_pdf, generate_whatsapp_link
 class WardViewSet(viewsets.ModelViewSet):
     queryset = Ward.objects.all()
     serializer_class = WardSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['ward_name', 'ward_number']
 
 class FamilyViewSet(viewsets.ModelViewSet):
     queryset = Family.objects.all()
     serializer_class = FamilySerializer
     
-    # Implement SearchFilter so frontend can search by family_name, head_name, or phone_number
+    # Implement SearchFilter so frontend can search by family_name, head_name, phone_number, or ward details
     filter_backends = [filters.SearchFilter]
-    search_fields = ['family_name', 'head_name', 'phone_number']
+    search_fields = ['family_name', 'head_name', 'phone_number', 'ward__ward_name', 'ward__ward_number']
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
     # ViewSet allows updating stock and price via PUT/PATCH out of the box.
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['id', 'family__family_name', 'family__head_name', 'family__phone_number']
 
     @action(detail=True, methods=['get'])
     def generate_pdf(self, request, pk=None):

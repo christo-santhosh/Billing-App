@@ -8,9 +8,6 @@
     scrollbar-width: none;
 }
 
-body {
-    min-height: max(884px, 100dvh);
-}
 
 ::-webkit-scrollbar {
     width: 4px;
