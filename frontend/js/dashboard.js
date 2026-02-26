@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="flex items-center justify-between p-3 rounded-lg bg-background-dark border border-slate-800 hover:bg-slate-800/50 transition-colors">
                     <div class="flex items-center gap-3">
                         <span class="w-3 h-3 rounded-full ${colorClass} ring-2 ring-white/10"></span>
-                        <span class="text-sm font-medium text-slate-200">${ward.ward_name}</span>
+                        <span class="text-sm font-medium text-slate-900">${ward.ward_name}</span>
                     </div>
                     <div class="text-right">
                         <span class="block text-sm font-bold text-white">${formatCurrency(revenue)}</span>
