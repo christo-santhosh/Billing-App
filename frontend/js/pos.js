@@ -2,14 +2,24 @@
 let products = [];
 let cart = [];
 let families = [];
+let wards = [];
 
 // DOM Elements
 const productGrid = document.getElementById('productGrid');
 const cartItemsList = document.getElementById('cartItemsList');
 const cartTotal = document.getElementById('cartTotal');
 const cartCount = document.getElementById('cartCount');
-const familySelect = document.getElementById('familySelect');
 const completeBillBtn = document.getElementById('completeBillBtn');
+const selectedFamilyId = document.getElementById('selectedFamilyId');
+const familySearchInput = document.getElementById('familySearchInput');
+const familySearchResults = document.getElementById('familySearchResults');
+const familySearchList = document.getElementById('familySearchList');
+const familySearchState = document.getElementById('familySearchState');
+const familySelectedState = document.getElementById('familySelectedState');
+const selectedFamilyName = document.getElementById('selectedFamilyName');
+const clearFamilyBtn = document.getElementById('clearFamilyBtn');
+const familyModal = document.getElementById('familyModal');
+const modalWardSelect = document.getElementById('modalWardSelect');
 const successModal = document.getElementById('successModal');
 const whatsappLink = document.getElementById('whatsappLink');
 const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -35,24 +45,150 @@ document.addEventListener('DOMContentLoaded', async () => {
     cartHandle.addEventListener('click', toggleCart);
     completeBillBtn.addEventListener('click', completeTransaction);
     downloadPdfBtn.addEventListener('click', downloadCurrentPdf);
+    if (clearFamilyBtn) clearFamilyBtn.addEventListener('click', clearFamilySelection);
 
-    await Promise.all([loadProducts(), loadFamilies()]);
+    await Promise.all([loadProducts(), loadWards()]);
     renderCart(); // init empty state
+
+    // Setup Search debounce
+    let searchTimeout;
+    if (familySearchInput) {
+        familySearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                familySearchResults.classList.add('hidden');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetchFamilyResults(query);
+            }, 300);
+        });
+
+        // Hide search when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!familySearchState.contains(e.target)) {
+                familySearchResults.classList.add('hidden');
+            }
+        });
+    }
 });
 
-async function loadFamilies() {
+async function loadWards() {
     try {
-        families = await fetchAPI('/families/');
-        familySelect.innerHTML = '<option value="">Select a family...</option>';
-        families.forEach(f => {
-            const opt = document.createElement('option');
-            opt.value = f.id;
-            opt.textContent = `${f.family_name} (${f.head_name})`;
-            familySelect.appendChild(opt);
+        wards = await fetchAPI('/wards/');
+        modalWardSelect.innerHTML = '<option value="">Select a Ward...</option>';
+        wards.forEach(w => {
+            modalWardSelect.insertAdjacentHTML('beforeend', `<option value="${w.id}">${w.ward_name} (${w.ward_number})</option>`);
         });
     } catch (e) {
-        console.error("Failed to load families", e);
-        familySelect.innerHTML = '<option value="">Error loading families</option>';
+        console.error("Failed to load wards for modal", e);
+        modalWardSelect.innerHTML = '<option value="">Error loading wards</option>';
+    }
+}
+
+async function fetchFamilyResults(query) {
+    try {
+        const results = await fetchAPI(`/families/?search=${encodeURIComponent(query)}`);
+        renderSearchResults(results);
+    } catch (e) {
+        console.error("Search failed", e);
+    }
+}
+
+function renderSearchResults(results) {
+    familySearchList.innerHTML = '';
+
+    if (results.length === 0) {
+        familySearchList.innerHTML = '<li class="p-4 text-center text-sm text-slate-500">No families found.</li>';
+    } else {
+        results.forEach(f => {
+            const li = document.createElement('li');
+            li.className = "flex items-center gap-3 p-3 hover:bg-accent cursor-pointer transition-colors";
+            li.innerHTML = `
+                <div class="h-8 w-8 rounded-full bg-green-100 text-primary-dark flex items-center justify-center font-bold text-xs shrink-0">
+                    ${f.family_name.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-slate-900 truncate">${f.family_name} Family</p>
+                    <p class="text-xs text-slate-500 truncate">Head: ${f.head_name} | ${f.phone_number}</p>
+                </div>
+            `;
+            li.addEventListener('click', () => selectFamily(f));
+            familySearchList.appendChild(li);
+        });
+    }
+
+    familySearchResults.classList.remove('hidden');
+}
+
+function selectFamily(family) {
+    selectedFamilyId.value = family.id;
+    selectedFamilyName.textContent = `${family.family_name} (${family.head_name})`;
+
+    familySearchState.classList.add('hidden');
+    familySearchResults.classList.add('hidden');
+    familySelectedState.classList.remove('hidden');
+    familySelectedState.classList.add('flex');
+}
+
+function clearFamilySelection() {
+    selectedFamilyId.value = '';
+    familySearchInput.value = '';
+
+    familySelectedState.classList.add('hidden');
+    familySelectedState.classList.remove('flex');
+    familySearchState.classList.remove('hidden');
+    familySearchInput.focus();
+}
+
+function openFamilyModal() {
+    familyModal.classList.remove('hidden');
+    familyModal.classList.add('flex');
+}
+
+function closeFamilyModal() {
+    familyModal.classList.add('hidden');
+    familyModal.classList.remove('flex');
+}
+
+async function saveFamily(e) {
+    e.preventDefault();
+    const btn = document.getElementById('registerFamilyBtn');
+
+    const payload = {
+        family_name: document.getElementById('familyName').value,
+        head_name: document.getElementById('headName').value,
+        phone_number: document.getElementById('phoneNumber').value,
+        ward: document.getElementById('modalWardSelect').value
+    };
+
+    try {
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Registering...';
+        btn.disabled = true;
+
+        const newFamily = await fetchAPI('/families/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        // Reset Form
+        document.getElementById('familyName').value = '';
+        document.getElementById('headName').value = '';
+        document.getElementById('phoneNumber').value = '';
+        document.getElementById('modalWardSelect').value = '';
+        closeFamilyModal();
+
+        // Auto-select the newly registered family for the bill!
+        selectFamily(newFamily);
+
+    } catch (err) {
+        alert("Failed to register family. Please verify details.");
+    } finally {
+        btn.innerHTML = 'Register Family';
+        btn.disabled = false;
     }
 }
 
@@ -182,7 +318,7 @@ function renderCart() {
 let lastInvoiceId = null;
 
 async function completeTransaction() {
-    const familyId = familySelect.value;
+    const familyId = selectedFamilyId.value;
 
     if (!familyId) {
         alert("Please select a family for the invoice.");
@@ -273,7 +409,7 @@ function closeSuccessModal() {
 
 window.startNewTransaction = function () {
     cart = [];
-    familySelect.value = '';
+    clearFamilySelection();
     lastInvoiceId = null;
     renderCart();
     successModal.classList.add('hidden');

@@ -25,7 +25,7 @@
             },
         }
     </script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body class="bg-slate-50 text-slate-900 font-display antialiased overflow-hidden h-screen flex flex-col md:flex-row">
@@ -44,19 +44,18 @@
         </div>
         <nav class="flex-1 flex flex-col gap-1 p-4">
             <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="index.html">
+                href="/">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
             <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="pos.html">
+                href="/pos/">
                 <span class="material-symbols-outlined">point_of_sale</span> POS Billing
             </a>
             <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="inventory.html">
+                href="/inventory/">
                 <span class="material-symbols-outlined">inventory_2</span> Inventory
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold"
-                href="families.html">
+            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold" href="/families/">
                 <span class="material-symbols-outlined">groups</span> Members &amp; Wards
             </a>
         </nav>
@@ -217,8 +216,8 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/families.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/families.js"></script>
 </body>
 
 </html>

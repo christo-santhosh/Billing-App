@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:8000/api';
+// Dynamically resolve the API base URL from the current page's host.
+// This works on localhost, ngrok, or any production domain automatically.
+const BASE_URL = `${window.location.protocol}//${window.location.host}/api`;
 
 /**
  * Helper function to handle API calls

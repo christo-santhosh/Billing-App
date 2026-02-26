@@ -56,7 +56,7 @@ function renderInventory() {
         const stockColor = outOfStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
 
         const html = `
-        <div class="group bg-white dark:bg-[#111618] rounded-xl p-4 border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all shadow-sm">
+        <div class="group bg-white rounded-xl p-4 border border-slate-200 hover:border-primary/50 transition-all shadow-sm">
             <div class="flex items-center justify-between md:grid md:grid-cols-12 md:gap-4">
                 <div class="md:col-span-1 hidden md:block text-slate-500 text-sm">#${p.id}</div>
                 <div class="flex items-center gap-4 md:col-span-4">
@@ -64,7 +64,7 @@ function renderInventory() {
                         <span class="material-symbols-outlined">${icons[iconIndex]}</span>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-slate-900 dark:text-white leading-tight">${p.name}</h3>
+                        <h3 class="font-semibold text-slate-900 leading-tight">${p.name}</h3>
                         <p class="text-xs text-slate-500 mt-0.5 md:hidden">ID: #${p.id}</p>
                     </div>
                 </div>
@@ -76,10 +76,10 @@ function renderInventory() {
                         </span>
                     </div>
                     <div class="md:col-span-2 md:text-center hidden md:block text-sm text-slate-500">${p.unit}</div>
-                    <div class="md:col-span-2 md:text-right font-medium text-slate-900 dark:text-white mt-1 md:mt-0">${formatCurrency(p.price)}</div>
+                    <div class="md:col-span-2 md:text-right font-medium text-slate-900 mt-1 md:mt-0">${formatCurrency(p.price)}</div>
                 </div>
                 <div class="md:col-span-1 flex justify-end">
-                    <button onclick="editProduct(${p.id})" class="size-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                    <button onclick="editProduct(${p.id})" class="size-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors">
                         <span class="material-symbols-outlined text-[20px]">edit</span>
                     </button>
                     ${!outOfStock ? `

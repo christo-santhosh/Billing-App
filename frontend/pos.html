@@ -25,7 +25,7 @@
             },
         }
     </script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body class="bg-slate-50 font-display text-slate-900 antialiased overflow-hidden h-screen flex flex-col">
@@ -33,14 +33,14 @@
     <!-- Top App Bar -->
     <header
         class="flex items-center justify-between px-4 py-3 bg-white border-b border-border-green shrink-0 z-20 shadow-sm">
-        <a href="index.html" class="p-2 -ml-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+        <a href="/" class="p-2 -ml-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
             <span class="material-symbols-outlined">arrow_back</span>
         </a>
         <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-primary text-2xl">church</span>
             <h1 class="text-lg font-bold tracking-tight text-slate-800">POS Terminal</h1>
         </div>
-        <a href="inventory.html" class="p-2 -mr-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+        <a href="/inventory/" class="p-2 -mr-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
             <span class="material-symbols-outlined">inventory_2</span>
         </a>
     </header>
@@ -48,15 +48,45 @@
     <main class="flex-1 flex flex-col overflow-hidden relative min-h-0">
         <!-- Family Selection -->
         <div class="px-4 py-3 shrink-0 bg-white z-10 border-b border-border-green">
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Family for
-                Invoice</label>
-            <div class="relative">
-                <select id="familySelect"
-                    class="w-full bg-slate-50 border border-border-green rounded-xl h-11 px-4 text-sm font-medium focus:ring-2 focus:ring-primary appearance-none text-slate-800">
-                    <option value="">Loading families...</option>
-                </select>
-                <span
-                    class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+            <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Select Family for
+                    Invoice</label>
+                <button onclick="openFamilyModal()"
+                    class="text-xs font-bold text-primary flex items-center gap-1 hover:text-primary-dark transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">add_circle</span> New
+                </button>
+            </div>
+
+            <div class="relative w-full">
+                <input type="hidden" id="selectedFamilyId">
+
+                <!-- Search State -->
+                <div id="familySearchState" class="relative group">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input id="familySearchInput" autocomplete="off"
+                        class="w-full bg-slate-50 border border-border-green rounded-xl h-11 pl-10 pr-4 text-sm font-medium focus:ring-2 focus:ring-primary appearance-none text-slate-800 focus:bg-white transition-all shadow-sm"
+                        placeholder="Search by name or phone...">
+                    <!-- Dropdown Results -->
+                    <div id="familySearchResults"
+                        class="absolute left-0 right-0 top-full mt-1 bg-white border border-border-green rounded-xl shadow-lg z-50 overflow-hidden hidden">
+                        <ul id="familySearchList" class="max-h-48 overflow-y-auto divide-y divide-border-green">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Selected State -->
+                <div id="familySelectedState"
+                    class="hidden items-center justify-between w-full bg-accent border border-primary/30 rounded-xl h-11 px-4 text-sm font-bold text-primary-dark shadow-sm">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                        <span id="selectedFamilyName" class="truncate"></span>
+                    </div>
+                    <button id="clearFamilyBtn" class="p-1 -mr-2 text-primary/60 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -145,8 +175,70 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/pos.js"></script>
+    <!-- Register Family Modal -->
+    <div id="familyModal"
+        class="fixed inset-0 z-50 bg-black/30 hidden items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white border border-border-green w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Register New Family</h2>
+                <button onclick="closeFamilyModal()" class="text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form onsubmit="saveFamily(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Family
+                        Name</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">badge</span>
+                        <input id="familyName" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="e.g. Johnson" type="text" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Head of
+                        Household</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">person</span>
+                        <input id="headName" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="e.g. Michael" type="text" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone
+                        Number</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">call</span>
+                        <input id="phoneNumber" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="+919876543210" type="tel" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Assign
+                        Ward</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">location_on</span>
+                        <select id="modalWardSelect" required
+                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-10 py-3 text-slate-900 appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                            <option value="">Loading Wards...</option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                    </div>
+                </div>
+                <button id="registerFamilyBtn" type="submit"
+                    class="w-full bg-primary text-white font-bold text-lg py-4 rounded-xl shadow-md shadow-primary/25 active:scale-95 transition-transform mt-6 hover:bg-primary-dark">
+                    Register Family
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/pos.js"></script>
 </body>
 
 </html>
