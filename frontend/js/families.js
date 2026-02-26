@@ -164,7 +164,7 @@ function renderFamilies() {
                             ${initial}
                         </div>
                         <div>
-                            <p class="text-white font-bold group-hover:text-primary transition-colors">The ${f.family_name} Family</p>
+                            <p class="text-slate-800 font-bold group-hover:text-primary transition-colors">The ${f.family_name} Family</p>
                             <p class="text-text-secondary text-xs">Head: ${f.head_name} | ${f.phone_number}</p>
                         </div>
                     </div>

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -24,7 +25,7 @@
             },
         }
     </script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
 </head>
 
 <body class="bg-slate-50 font-display text-slate-900 h-screen flex overflow-hidden">
@@ -155,42 +156,16 @@
                             <p class="text-sm text-slate-500">Income over time</p>
                         </div>
                         <div class="flex bg-slate-50 p-1 rounded-lg self-start sm:self-auto border border-slate-100">
-                            <button
+                            <button id="btnWeek"
                                 class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Week</button>
-                            <button
+                            <button id="btnMonth"
                                 class="px-3 py-1 text-xs font-bold rounded bg-white text-primary-dark shadow-sm border border-slate-100">Month</button>
-                            <button
+                            <button id="btnYear"
                                 class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-900 transition-colors">Year</button>
                         </div>
                     </div>
                     <div class="relative h-48 w-full mt-2">
-                        <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 50">
-                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
-                                x1="0" x2="100" y1="0" y2="0" />
-                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
-                                x1="0" x2="100" y1="12.5" y2="12.5" />
-                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
-                                x1="0" x2="100" y1="25" y2="25" />
-                            <line class="text-slate-100" stroke="currentColor" stroke-dasharray="2" stroke-width="0.5"
-                                x1="0" x2="100" y1="37.5" y2="37.5" />
-                            <defs>
-                                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
-                                    <stop offset="0%" stop-color="#16a34a" stop-opacity="0.2" />
-                                    <stop offset="100%" stop-color="#16a34a" stop-opacity="0" />
-                                </linearGradient>
-                            </defs>
-                            <path
-                                d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5 L100,50 L0,50 Z"
-                                fill="url(#gradient)" />
-                            <path d="M0,45 C10,40 20,45 30,30 C40,15 50,35 60,20 C70,5 80,15 90,10 L100,5" fill="none"
-                                stroke="#16a34a" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
-                            <circle class="fill-white stroke-green-700" cx="30" cy="30" r="1.5" stroke-width="1" />
-                            <circle class="fill-white stroke-green-700" cx="60" cy="20" r="1.5" stroke-width="1" />
-                            <circle class="fill-white stroke-green-700" cx="90" cy="10" r="1.5" stroke-width="1" />
-                        </svg>
-                    </div>
-                    <div class="flex justify-between mt-2 text-xs text-slate-400 font-medium">
-                        <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
 
@@ -204,8 +179,8 @@
         </main>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/api.js?v=2"></script>
+    <script src="/static/js/dashboard.js?v=2"></script>
 </body>
 
 </html>
