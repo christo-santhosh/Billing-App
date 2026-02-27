@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnYear.addEventListener('click', () => switchChart('year'));
 
         // ── Ward Doughnut Chart ────────────────────────────────────────
-        const wardColors = ['#16a34a', '#10b981', '#a855f7', '#f97316', '#ec4899', '#3b82f6'];
+        const wardColors = ['#22c55e', '#14b8a6', '#a855f7', '#f97316', '#ec4899', '#94a3b8'];
         // wardData already declared above
 
         let totalOrders = 0;
