@@ -37,19 +37,40 @@
             <h1 class="dash-greeting-name">Hello, Administrator</h1>
         </div>
 
-        <!-- Revenue Card -->
-        <div class="card flex-between" style="position:relative;">
-            <span class="material-symbols-outlined stat-bg-icon">payments</span>
-            <div class="z-10">
-                <div class="stat-icon-box mb-sm">
-                    <span class="material-symbols-outlined">currency_rupee</span>
+        <!-- Swipable Stat Cards -->
+        <div class="stats-grid">
+            <!-- Card 1: Total Revenue -->
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-bg-icon">payments</span>
+                <div class="z-10">
+                    <div class="stat-icon-box mb-sm">
+                        <span class="material-symbols-outlined">currency_rupee</span>
+                    </div>
+                    <p class="stat-label">Total Revenue (All Time)</p>
+                    <h3 id="statRevenue" class="stat-value">₹--</h3>
                 </div>
-                <p class="stat-label">Total Revenue (Monthly)</p>
-                <h3 id="statMonthlyRevenue" class="stat-value">₹--</h3>
             </div>
-            <div id="statRevenueChange" class="badge badge-green z-10"
-                style="font-size:0.75rem; padding:4px 10px; align-self:flex-start;">
-                --
+            <!-- Card 2: Top Performing Ward -->
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-bg-icon">groups</span>
+                <div class="z-10">
+                    <div class="stat-icon-box mb-sm">
+                        <span class="material-symbols-outlined">emoji_events</span>
+                    </div>
+                    <p class="stat-label">Top Performing Ward</p>
+                    <h3 id="statTopWard" class="stat-value">--</h3>
+                </div>
+            </div>
+            <!-- Card 3: Total Wards -->
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-bg-icon">location_city</span>
+                <div class="z-10">
+                    <div class="stat-icon-box mb-sm">
+                        <span class="material-symbols-outlined">apartment</span>
+                    </div>
+                    <p class="stat-label">Total Wards</p>
+                    <h3 id="statTotalWards" class="stat-value">--</h3>
+                </div>
             </div>
         </div>
 

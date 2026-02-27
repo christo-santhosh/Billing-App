@@ -18,29 +18,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         dashContent.classList.remove('hidden');
         dashContent.style.display = 'flex';
 
-        // Monthly Revenue (latest month)
-        const monthly = revenueData.monthly || [];
-        if (monthly.length > 0) {
-            const latest = monthly[monthly.length - 1];
-            document.getElementById('statMonthlyRevenue').textContent = formatCurrency(parseFloat(latest.revenue || 0));
+        // ── Stat Cards ─────────────────────────────────────────────
+        const wardData = wardAnalysis.ward_revenue || [];
 
-            // Calculate % change from previous month
-            if (monthly.length > 1) {
-                const prev = parseFloat(monthly[monthly.length - 2].revenue || 0);
-                const curr = parseFloat(latest.revenue || 0);
-                if (prev > 0) {
-                    const change = ((curr - prev) / prev * 100).toFixed(0);
-                    const badge = document.getElementById('statRevenueChange');
-                    if (change >= 0) {
-                        badge.textContent = `↑ ${change}%`;
-                        badge.className = 'badge badge-green';
-                    } else {
-                        badge.textContent = `↓ ${Math.abs(change)}%`;
-                        badge.className = 'badge badge-red';
-                    }
-                }
-            }
+        // Card 1: Total Revenue (All Time) — sum of all ward revenues
+        const totalRevenue = wardData.reduce((sum, w) => sum + parseFloat(w.total_revenue || 0), 0);
+        document.getElementById('statRevenue').textContent = formatCurrency(totalRevenue);
+
+        // Card 2: Top Performing Ward — ward with highest revenue
+        if (wardData.length > 0) {
+            const topWard = wardData.reduce((best, w) =>
+                parseFloat(w.total_revenue || 0) > parseFloat(best.total_revenue || 0) ? w : best
+                , wardData[0]);
+            document.getElementById('statTopWard').textContent = topWard.ward_name;
         }
+
+        // Card 3: Total Wards
+        document.getElementById('statTotalWards').textContent = wardData.length;
 
         // ── Revenue Line Chart ─────────────────────────────────────────
         function prepareChartData(records, dateKey, count = 10) {
@@ -151,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // ── Ward Doughnut Chart ────────────────────────────────────────
         const wardColors = ['#16a34a', '#10b981', '#a855f7', '#f97316', '#ec4899', '#3b82f6'];
-        const wardData = wardAnalysis.ward_revenue || [];
+        // wardData already declared above
 
         let totalOrders = 0;
         const wardLabels = [];
@@ -198,12 +192,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // Render legend
-        const totalRevenue = wardValues.reduce((s, v) => s + v, 0);
+        const legendTotal = wardValues.reduce((s, v) => s + v, 0);
         const legendContainer = document.getElementById('wardLegend');
 
         wardData.forEach((w, idx) => {
             const revenue = parseFloat(w.total_revenue || 0);
-            const percent = totalRevenue > 0 ? ((revenue / totalRevenue) * 100).toFixed(0) : 0;
+            const percent = legendTotal > 0 ? ((revenue / legendTotal) * 100).toFixed(0) : 0;
             const color = wardColors[idx % wardColors.length];
 
             legendContainer.insertAdjacentHTML('beforeend', `
