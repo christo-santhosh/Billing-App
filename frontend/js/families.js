@@ -11,30 +11,6 @@ const familyModal = document.getElementById('familyModal');
 const modalWardSelect = document.getElementById('modalWardSelect');
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Mobile Sidebar Toggle
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    const openSidebarBtn = document.getElementById('openSidebar');
-    const closeSidebarBtn = document.getElementById('closeSidebar');
-
-    function toggleSidebar() {
-        if (!sidebar || !sidebarOverlay) return;
-        const isOpen = sidebar.classList.contains('open');
-        if (isOpen) {
-            sidebar.classList.remove('open');
-            setTimeout(() => {
-                sidebarOverlay.classList.remove('show');
-            }, 300);
-        } else {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('show');
-        }
-    }
-
-    if (openSidebarBtn) openSidebarBtn.addEventListener('click', toggleSidebar);
-    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', toggleSidebar);
-    if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
-
     await loadData();
 
     // Setup Search debounce

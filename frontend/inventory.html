@@ -8,51 +8,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/style.css?v=3">
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
 </head>
 
-<body class="page">
+<body class="page-col">
 
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-            <h2 class="sidebar-logo">
-                <span class="material-symbols-outlined">church</span>
-                Church Portal
-            </h2>
-            <button id="closeSidebar" class="sidebar-close">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <nav class="sidebar-nav">
-            <a class="nav-link" href="/">
-                <span class="material-symbols-outlined">dashboard</span> Dashboard
-            </a>
-            <a class="nav-link" href="/pos/">
-                <span class="material-symbols-outlined">point_of_sale</span> POS Billing
-            </a>
-            <a class="nav-link active" href="/inventory/">
-                <span class="material-symbols-outlined">inventory_2</span> Inventory
-            </a>
-            <a class="nav-link" href="/families/">
-                <span class="material-symbols-outlined">groups</span> Members &amp; Wards
-            </a>
-            <a class="nav-link" href="/sales/">
-                <span class="material-symbols-outlined">history</span> Sales History
-            </a>
-        </nav>
-    </div>
-
-    <div id="sidebarOverlay" class="sidebar-overlay"></div>
-
-    <!-- Main Content -->
+    <!-- Main Content (no sidebar) -->
     <main class="main-content">
         <!-- Header -->
         <header class="page-header">
             <div class="topbar-left">
-                <button id="openSidebar" class="menu-btn">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
+                <a href="/" class="btn-back">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
                 <div>
                     <h1 class="topbar-title">Inventory</h1>
                     <p class="topbar-subtitle">Manage church supplies &amp; stock</p>
@@ -135,8 +103,8 @@
         </div>
     </div>
 
-    <script src="/static/js/api.js?v=3"></script>
-    <script src="/static/js/inventory.js?v=3"></script>
+    <script src="/static/js/api.js?v=4"></script>
+    <script src="/static/js/inventory.js?v=4"></script>
 </body>
 
 </html>
