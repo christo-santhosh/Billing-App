@@ -45,3 +45,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
             price = product.price
             InvoiceItem.objects.create(invoice=invoice, product=product, quantity=quantity, price=price)
         return invoice
+
+
+class InvoiceListSerializer(serializers.ModelSerializer):
+    """Read-only serializer for Sales History list — embeds family & ward names."""
+    family_name = serializers.CharField(source='family.family_name', read_only=True)
+    head_name   = serializers.CharField(source='family.head_name',   read_only=True)
+    ward_name   = serializers.CharField(source='family.ward.ward_name', read_only=True)
+    item_count  = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Invoice
+        fields = ['id', 'date', 'total_amount', 'payment_method',
+                  'family_name', 'head_name', 'ward_name', 'item_count']
+
+    def get_item_count(self, obj):
+        return obj.items.count()

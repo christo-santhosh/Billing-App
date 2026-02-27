@@ -5,7 +5,7 @@ from django.http import FileResponse
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from .models import Ward, Family, Product, Invoice
-from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer
+from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer
 from .utils import generate_invoice_pdf, generate_whatsapp_link
 
 class WardViewSet(viewsets.ModelViewSet):
@@ -30,10 +30,15 @@ class ProductViewSet(viewsets.ModelViewSet):
     # ViewSet allows updating stock and price via PUT/PATCH out of the box.
 
 class InvoiceViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.all()
+    queryset = Invoice.objects.select_related('family__ward').prefetch_related('items').order_by('-date')
     serializer_class = InvoiceSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['id', 'family__family_name', 'family__head_name', 'family__phone_number']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return InvoiceListSerializer
+        return InvoiceSerializer
 
     @action(detail=True, methods=['get'])
     def generate_pdf(self, request, pk=None):

@@ -26,6 +26,8 @@ const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 const cartSheet = document.getElementById('cartSheet');
 const cartHeaderToggle = document.getElementById('cartHeaderToggle');
 const cartHandle = document.getElementById('cartHandle');
+const payMethodCash = document.getElementById('payMethodCash');
+const payMethodUpi = document.getElementById('payMethodUpi');
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Bottom Sheet Toggle Logic
@@ -46,6 +48,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     completeBillBtn.addEventListener('click', completeTransaction);
     downloadPdfBtn.addEventListener('click', downloadCurrentPdf);
     if (clearFamilyBtn) clearFamilyBtn.addEventListener('click', clearFamilySelection);
+
+    // Payment method toggle — replace full className to avoid Tailwind CDN JIT issues
+    const BASE_BTN = 'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition-all';
+    const ACTIVE_BTN = `${BASE_BTN} bg-primary text-white shadow-sm`;
+    const INACTIVE_BTN = `${BASE_BTN} text-slate-500`;
+
+    function setPaymentMethod(method) {
+        if (method === 'CASH') {
+            payMethodCash.className = ACTIVE_BTN;
+            payMethodUpi.className = INACTIVE_BTN;
+        } else {
+            payMethodUpi.className = ACTIVE_BTN;
+            payMethodCash.className = INACTIVE_BTN;
+        }
+        payMethodCash.dataset.active = method === 'CASH' ? 'true' : 'false';
+    }
+
+    payMethodCash.addEventListener('click', () => setPaymentMethod('CASH'));
+    payMethodUpi.addEventListener('click', () => setPaymentMethod('UPI'));
 
     await Promise.all([loadProducts(), loadWards()]);
     renderCart(); // init empty state
@@ -317,6 +338,10 @@ function renderCart() {
 
 let lastInvoiceId = null;
 
+function getSelectedPaymentMethod() {
+    return payMethodCash.dataset.active === 'false' ? 'UPI' : 'CASH';
+}
+
 async function completeTransaction() {
     const familyId = selectedFamilyId.value;
 
@@ -336,9 +361,10 @@ async function completeTransaction() {
         quantity: item.quantity
     }));
 
+    const paymentMethod = getSelectedPaymentMethod();
     const payload = {
         family: familyId,
-        payment_method: "CASH",
+        payment_method: paymentMethod,
         items: itemsPayload
     };
 
@@ -358,7 +384,8 @@ async function completeTransaction() {
         whatsappLink.href = waRes.whatsapp_url;
 
         // Show Success Modal
-        document.getElementById('successInvoiceText').textContent = `Transaction #${response.id} has been recorded successfully.`;
+        const methodLabel = paymentMethod === 'UPI' ? '📲 UPI' : '💵 Cash';
+        document.getElementById('successInvoiceText').textContent = `Transaction #${response.id} recorded. Paid by ${methodLabel}.`;
         successModal.classList.remove('hidden');
 
         // Refresh products stock locally
