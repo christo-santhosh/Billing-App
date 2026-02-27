@@ -8,148 +8,119 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#16a34a",
-                        "primary-dark": "#15803d",
-                        "accent": "#dcfce7",
-                        "border-green": "#bbf7d0",
-                        "surface-cart": "#f0fdf4",
-                    },
-                    fontFamily: { "display": ["Manrope", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
 </head>
 
-<body class="bg-slate-50 font-display text-slate-900 antialiased overflow-hidden h-screen flex flex-col">
+<body class="page-col">
 
     <!-- Top App Bar -->
-    <header
-        class="flex items-center justify-between px-4 py-3 bg-white border-b border-border-green shrink-0 z-20 shadow-sm">
-        <a href="/" class="p-2 -ml-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+    <header class="topbar-simple">
+        <a href="/" class="btn-back">
             <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <div class="flex items-center gap-2">
+        <div class="flex-row gap-sm">
             <span class="material-symbols-outlined text-primary text-2xl">church</span>
-            <h1 class="text-lg font-bold tracking-tight text-slate-800">POS Terminal</h1>
+            <h1 class="topbar-title">POS Terminal</h1>
         </div>
-        <a href="/inventory/" class="p-2 -mr-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+        <a href="/inventory/" class="btn-back" style="margin-left:auto; margin-right:-8px;">
             <span class="material-symbols-outlined">inventory_2</span>
         </a>
     </header>
 
-    <main class="flex-1 flex flex-col overflow-hidden relative min-h-0">
+    <main class="main-content">
         <!-- Family Selection -->
-        <div class="px-4 py-3 shrink-0 bg-white z-10 border-b border-border-green">
-            <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Select Family for
-                    Invoice</label>
-                <button onclick="openFamilyModal()"
-                    class="text-xs font-bold text-primary flex items-center gap-1 hover:text-primary-dark transition-colors">
-                    <span class="material-symbols-outlined text-[14px]">add_circle</span> New
+        <div class="family-search-section">
+            <div class="flex-between mb-sm">
+                <label class="label">Select Family for Invoice</label>
+                <button onclick="openFamilyModal()" class="text-xs bold text-primary flex-row gap-xs">
+                    <span class="material-symbols-outlined" style="font-size:14px;">add_circle</span> New
                 </button>
             </div>
 
-            <div class="relative w-full">
+            <div class="family-search-box">
                 <input type="hidden" id="selectedFamilyId">
 
                 <!-- Search State -->
-                <div id="familySearchState" class="relative group">
-                    <span
-                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                    <input id="familySearchInput" autocomplete="off"
-                        class="w-full bg-slate-50 border border-border-green rounded-xl h-11 pl-10 pr-4 text-sm font-medium focus:ring-2 focus:ring-primary appearance-none text-slate-800 focus:bg-white transition-all shadow-sm"
+                <div id="familySearchState" class="input-wrapper">
+                    <span class="material-symbols-outlined input-icon">search</span>
+                    <input id="familySearchInput" autocomplete="off" class="input input-with-icon"
                         placeholder="Search by name or phone...">
                     <!-- Dropdown Results -->
-                    <div id="familySearchResults"
-                        class="absolute left-0 right-0 top-full mt-1 bg-white border border-border-green rounded-xl shadow-lg z-50 overflow-hidden hidden">
-                        <ul id="familySearchList" class="max-h-48 overflow-y-auto divide-y divide-border-green">
+                    <div id="familySearchResults" class="search-dropdown hidden">
+                        <ul id="familySearchList" class="search-list">
                             <!-- Populated via JS -->
                         </ul>
                     </div>
                 </div>
 
                 <!-- Selected State -->
-                <div id="familySelectedState"
-                    class="hidden items-center justify-between w-full bg-accent border border-primary/30 rounded-xl h-11 px-4 text-sm font-bold text-primary-dark shadow-sm">
-                    <div class="flex items-center gap-2 truncate">
-                        <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                <div id="familySelectedState" class="family-selected hidden">
+                    <div class="flex-row gap-sm truncate">
+                        <span class="material-symbols-outlined" style="font-size:18px;">verified_user</span>
                         <span id="selectedFamilyName" class="truncate"></span>
                     </div>
-                    <button id="clearFamilyBtn" class="p-1 -mr-2 text-primary/60 hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    <button id="clearFamilyBtn" style="color:rgba(22,163,74,0.6); padding:4px;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Product Grid -->
-        <div class="flex-1 overflow-y-auto px-4 pb-48 pt-3">
-            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Add Items to Cart</h2>
-            <div id="productGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
-                <div class="col-span-full text-center py-10 text-slate-400">Loading products...</div>
+        <div class="content-area" style="padding-bottom:192px;">
+            <h2 class="section-label">Add Items to Cart</h2>
+            <div id="productGrid" class="product-grid">
+                <div style="grid-column:1/-1;" class="text-center p-md text-muted">Loading products...</div>
             </div>
         </div>
     </main>
 
     <!-- Bottom Cart Sheet -->
-    <div class="absolute bottom-0 left-0 right-0 z-30 bg-white border-t border-border-green rounded-t-2xl shadow-[0_-4px_20px_rgba(22,163,74,0.1)] transition-transform duration-300 transform translate-y-[calc(100%-70px)]"
-        id="cartSheet">
-        <div class="w-full flex justify-center pt-3 pb-1 cursor-pointer" id="cartHandle">
-            <div class="w-12 h-1.5 rounded-full bg-green-200"></div>
+    <div class="cart-sheet" id="cartSheet">
+        <div class="cart-handle" id="cartHandle">
+            <div class="cart-handle-bar"></div>
         </div>
 
-        <div class="px-4 pb-4">
+        <div class="cart-body">
             <!-- Cart Header -->
-            <div class="flex items-center justify-between mb-4 cursor-pointer" id="cartHeaderToggle">
-                <div class="flex items-center gap-2">
-                    <div class="bg-accent text-primary p-2 rounded-lg">
+            <div class="cart-header" id="cartHeaderToggle">
+                <div class="flex-row gap-sm">
+                    <div class="cart-icon">
                         <span class="material-symbols-outlined">shopping_cart</span>
                     </div>
-                    <span class="text-slate-800 font-bold text-lg">Current Bill</span>
+                    <span class="cart-title">Current Bill</span>
                 </div>
-                <span id="cartCount" class="px-2 py-1 bg-slate-100 text-xs font-medium text-slate-600 rounded-md">0
-                    Items</span>
+                <span id="cartCount" class="cart-count">0 Items</span>
             </div>
 
             <!-- Cart Items List -->
-            <div id="cartItemsList" class="max-h-[30vh] overflow-y-auto mb-4 space-y-3 no-scrollbar">
-                <div class="text-center text-slate-400 text-sm py-4">Cart is empty</div>
+            <div id="cartItemsList" class="cart-items space-y-sm">
+                <div class="text-center text-muted text-sm" style="padding:16px 0;">Cart is empty</div>
             </div>
 
             <!-- Footer -->
-            <div class="border-t border-border-green pt-3">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-slate-500 text-sm">Total Amount</span>
-                    <span id="cartTotal" class="text-2xl font-bold text-primary">₹0.00</span>
+            <div class="cart-footer">
+                <div class="flex-between mb-md">
+                    <span class="text-sm text-light">Total Amount</span>
+                    <span id="cartTotal" class="cart-total">₹0.00</span>
                 </div>
 
                 <!-- Payment Method Toggle -->
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">Pay via</span>
-                    <div class="flex flex-1 bg-slate-100 rounded-xl p-1 gap-1">
-                        <button id="payMethodCash"
-                            class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition-all bg-primary text-white shadow-sm">
-                            <span class="material-symbols-outlined text-[16px]">currency_rupee</span>
+                <div class="flex-row gap-sm mb-md">
+                    <span class="text-xs bold text-muted uppercase shrink-0">Pay via</span>
+                    <div class="pay-toggle">
+                        <button id="payMethodCash" class="pay-btn active">
+                            <span class="material-symbols-outlined">currency_rupee</span>
                             Cash
                         </button>
-                        <button id="payMethodUpi"
-                            class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700">
-                            <span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                        <button id="payMethodUpi" class="pay-btn">
+                            <span class="material-symbols-outlined">qr_code_scanner</span>
                             UPI
                         </button>
                     </div>
                 </div>
 
-                <button id="completeBillBtn"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 px-6 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all active:scale-95 hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed">
+                <button id="completeBillBtn" class="btn btn-primary-lg">
                     <span class="material-symbols-outlined">receipt_long</span>
                     Complete Bill
                 </button>
@@ -158,34 +129,31 @@
     </div>
 
     <!-- Success Modal -->
-    <div id="successModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 hidden">
-        <div class="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl border border-border-green relative">
-            <button onclick="closeSuccessModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-box" style="text-align:center;">
+            <button onclick="closeSuccessModal()" class="modal-close" style="position:absolute;top:16px;right:16px;">
                 <span class="material-symbols-outlined">close</span>
             </button>
-            <div class="flex flex-col items-center text-center">
-                <div class="h-16 w-16 rounded-full bg-accent flex items-center justify-center mb-4 text-primary">
-                    <span class="material-symbols-outlined text-[32px]">check_circle</span>
+            <div class="flex-col" style="align-items:center;">
+                <div class="success-icon-circle">
+                    <span class="material-symbols-outlined">check_circle</span>
                 </div>
-                <h3 class="text-xl font-bold text-slate-900 mb-1">Payment Successful!</h3>
-                <p id="successInvoiceText" class="text-sm text-slate-500 mb-6">Invoice created successfully.</p>
-                <div class="w-full space-y-3">
-                    <a id="whatsappLink" href="#" target="_blank"
-                        class="w-full flex items-center justify-center gap-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] py-3 text-white font-bold transition-colors">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <h3 class="text-xl bold text-dark mb-sm">Payment Successful!</h3>
+                <p id="successInvoiceText" class="text-sm text-light mb-lg">Invoice created successfully.</p>
+                <div class="flex-col gap-md" style="width:100%;">
+                    <a id="whatsappLink" href="#" target="_blank" class="btn btn-whatsapp">
+                        <svg class="w-5 h-5 fill-current" style="width:20px;height:20px;fill:currentColor;"
+                            viewBox="0 0 24 24">
                             <path
                                 d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                         </svg>
                         Share to WhatsApp
                     </a>
-                    <button id="downloadPdfBtn"
-                        class="w-full flex items-center justify-center gap-2 rounded-xl border border-border-green hover:bg-accent py-3 text-slate-700 font-medium transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">download</span>
+                    <button id="downloadPdfBtn" class="btn btn-outline" style="width:100%;">
+                        <span class="material-symbols-outlined" style="font-size:20px;">download</span>
                         Download PDF
                     </button>
-                    <button onclick="startNewTransaction()"
-                        class="w-full py-2 text-slate-400 hover:text-slate-700 text-sm">
+                    <button onclick="startNewTransaction()" class="btn-text">
                         Start New Transaction
                     </button>
                 </div>
@@ -194,69 +162,61 @@
     </div>
 
     <!-- Register Family Modal -->
-    <div id="familyModal"
-        class="fixed inset-0 z-50 bg-black/30 hidden items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white border border-border-green w-full max-w-md rounded-2xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-slate-800">Register New Family</h2>
-                <button onclick="closeFamilyModal()" class="text-slate-400 hover:text-slate-600">
+    <div id="familyModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="modal-title">Register New Family</h2>
+                <button onclick="closeFamilyModal()" class="modal-close">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <form onsubmit="saveFamily(event)" class="space-y-4">
+            <form onsubmit="saveFamily(event)" class="flex-col gap-md">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Family
-                        Name</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">badge</span>
-                        <input id="familyName" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="e.g. Johnson" type="text" />
+                    <label class="label">Family Name</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">badge</span>
+                        <input id="familyName" required class="input input-with-icon" placeholder="e.g. Johnson"
+                            type="text" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Head of
-                        Household</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">person</span>
-                        <input id="headName" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="e.g. Michael" type="text" />
+                    <label class="label">Head of Household</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon"
+                            style="top:22px;transform:none;">person</span>
+                        <input id="headName" required class="input input-with-icon" placeholder="e.g. Michael"
+                            type="text" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone
-                        Number</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">call</span>
-                        <input id="phoneNumber" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="+919876543210" type="tel" />
+                    <label class="label">Phone Number</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">call</span>
+                        <input id="phoneNumber" required class="input input-with-icon" placeholder="+919876543210"
+                            type="tel" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Assign
-                        Ward</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">location_on</span>
-                        <select id="modalWardSelect" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-10 py-3 text-slate-900 appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <label class="label">Assign Ward</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon"
+                            style="top:22px;transform:none;">location_on</span>
+                        <select id="modalWardSelect" required class="select">
                             <option value="">Loading Wards...</option>
                         </select>
-                        <span
-                            class="material-symbols-outlined absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                        <span class="material-symbols-outlined input-icon-right"
+                            style="top:22px;transform:none;">expand_more</span>
                     </div>
                 </div>
-                <button id="registerFamilyBtn" type="submit"
-                    class="w-full bg-primary text-white font-bold text-lg py-4 rounded-xl shadow-md shadow-primary/25 active:scale-95 transition-transform mt-6 hover:bg-primary-dark">
+                <button id="registerFamilyBtn" type="submit" class="btn btn-primary-lg mt-lg">
                     Register Family
                 </button>
             </form>
         </div>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/pos.js"></script>
+    <script src="/static/js/api.js?v=3"></script>
+    <script src="/static/js/pos.js?v=3"></script>
 </body>
 
 </html>

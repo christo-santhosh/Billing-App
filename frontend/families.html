@@ -8,150 +8,118 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#16a34a",
-                        "primary-dark": "#15803d",
-                        accent: "#dcfce7",
-                        "border-green": "#bbf7d0",
-                        "text-secondary": "#64748b",
-                    },
-                    fontFamily: { display: ["Manrope", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
 </head>
 
-<body class="bg-slate-50 text-slate-900 font-display antialiased overflow-hidden h-screen flex flex-col md:flex-row">
+<body class="page">
 
     <!-- Sidebar -->
-    <div id="sidebar"
-        class="flex flex-col w-64 bg-white border-r border-border-green h-full shrink-0 absolute md:relative z-50 transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-sm">
-        <div class="px-6 py-5 flex items-center justify-between border-b border-border-green">
-            <h2 class="text-xl font-bold text-green-800 tracking-tight flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">church</span>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-logo">
+                <span class="material-symbols-outlined">church</span>
                 Church Portal
             </h2>
-            <button id="closeSidebar" class="md:hidden text-slate-400 hover:text-primary">
+            <button id="closeSidebar" class="sidebar-close">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
-        <nav class="flex-1 flex flex-col gap-1 p-4">
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/">
+        <nav class="sidebar-nav">
+            <a class="nav-link" href="/">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/pos/">
+            <a class="nav-link" href="/pos/">
                 <span class="material-symbols-outlined">point_of_sale</span> POS Billing
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/inventory/">
+            <a class="nav-link" href="/inventory/">
                 <span class="material-symbols-outlined">inventory_2</span> Inventory
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold" href="/families/">
+            <a class="nav-link active" href="/families/">
                 <span class="material-symbols-outlined">groups</span> Members &amp; Wards
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/sales/">
+            <a class="nav-link" href="/sales/">
                 <span class="material-symbols-outlined">history</span> Sales History
             </a>
         </nav>
     </div>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full relative overflow-hidden min-h-0">
+    <main class="main-content">
         <!-- Header -->
-        <header
-            class="flex items-center justify-between px-6 md:px-8 py-5 border-b border-border-green bg-white z-20 shadow-sm">
-            <div class="flex items-center gap-3">
-                <button id="openSidebar"
-                    class="md:hidden p-2 -ml-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
-                    <span class="material-symbols-outlined text-[24px]">menu</span>
+        <header class="page-header">
+            <div class="topbar-left">
+                <button id="openSidebar" class="menu-btn">
+                    <span class="material-symbols-outlined">menu</span>
                 </button>
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-800">Community Management</h1>
-                    <p class="text-text-secondary text-sm hidden md:block">Manage wards, registered families, and member
-                        details.</p>
+                    <h1 class="topbar-title">Community Management</h1>
+                    <p class="topbar-subtitle desktop-only">Manage wards, registered families, and member details.</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="relative hidden sm:block">
-                    <span
-                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-                    <input id="familySearch"
-                        class="pl-10 pr-4 py-2 bg-slate-50 border border-border-green rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-primary focus:border-primary outline-none w-64"
-                        placeholder="Search families..." type="text" />
+            <div class="flex-row gap-lg">
+                <div class="input-wrapper desktop-only">
+                    <span class="material-symbols-outlined input-icon">search</span>
+                    <input id="familySearch" class="input input-with-icon" placeholder="Search families..." type="text"
+                        style="width:256px;" />
                 </div>
-                <button onclick="openFamilyModal()"
-                    class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-md shadow-primary/20">
-                    <span class="material-symbols-outlined text-lg">add</span>
+                <button onclick="openFamilyModal()" class="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size:18px;">add</span>
                     Register Family
                 </button>
             </div>
         </header>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
-            <div class="flex flex-col lg:flex-row gap-6 pb-20 md:pb-0">
+        <div class="content-area content-area-lg">
+            <div class="two-col">
 
                 <!-- Left: Ward Management -->
-                <div class="w-full lg:w-1/3 flex flex-col gap-6">
+                <div class="col-side flex-col gap-lg">
                     <!-- Add Ward -->
-                    <div class="bg-white border border-border-green rounded-xl p-5 shadow-sm">
-                        <div class="flex items-center gap-2 mb-4">
+                    <div class="card-sm">
+                        <div class="flex-row gap-sm mb-md">
                             <span class="material-symbols-outlined text-primary">add_location_alt</span>
-                            <h3 class="text-slate-800 font-bold text-lg">Add New Ward</h3>
+                            <h3 class="text-lg bold text-dark">Add New Ward</h3>
                         </div>
-                        <p class="text-text-secondary text-sm mb-4">Create a new ward for your congregation.</p>
-                        <form onsubmit="saveWard(event)" class="space-y-3">
+                        <p class="text-sm text-light mb-md">Create a new ward for your congregation.</p>
+                        <form onsubmit="saveWard(event)" class="flex-col gap-md">
                             <div>
-                                <label class="block text-xs font-medium text-text-secondary mb-1">Ward Number</label>
-                                <input id="wardNumber" required
-                                    class="w-full bg-slate-50 border border-border-green rounded-lg px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                                    placeholder="e.g. W-01" type="text" />
+                                <label class="label-sm">Ward Number</label>
+                                <input id="wardNumber" required class="input" placeholder="e.g. W-01" type="text" />
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-text-secondary mb-1">Ward Name</label>
-                                <input id="wardName" required
-                                    class="w-full bg-slate-50 border border-border-green rounded-lg px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                                    placeholder="e.g. North District" type="text" />
+                                <label class="label-sm">Ward Name</label>
+                                <input id="wardName" required class="input" placeholder="e.g. North District"
+                                    type="text" />
                             </div>
-                            <button type="submit"
-                                class="w-full bg-primary text-white font-bold py-2.5 rounded-lg hover:bg-primary-dark transition-colors shadow-md shadow-primary/20 mt-2">
+                            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">
                                 Create Ward
                             </button>
                         </form>
                     </div>
 
                     <!-- Ward List -->
-                    <div class="bg-white border border-border-green rounded-xl overflow-hidden shadow-sm">
-                        <div class="p-4 border-b border-border-green flex justify-between items-center bg-slate-50">
-                            <h3 class="text-slate-800 font-bold">Wards List</h3>
+                    <div class="card-sm" style="padding:0; overflow:hidden;">
+                        <div class="flex-between"
+                            style="padding:16px; border-bottom:1px solid var(--border-green); background:var(--slate-50);">
+                            <h3 class="bold text-dark">Wards List</h3>
                         </div>
-                        <div id="wardsList" class="divide-y divide-border-green max-h-[400px] overflow-y-auto">
-                            <div class="p-4 text-center text-text-secondary text-sm">Loading...</div>
+                        <div id="wardsList" class="divider-list" style="max-height:400px; overflow-y:auto;">
+                            <div class="text-center text-light text-sm" style="padding:16px;">Loading...</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right: Families List -->
-                <div class="w-full lg:w-2/3 flex flex-col gap-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-xl font-bold text-slate-800">Registered Families</h2>
-                        <span id="familiesCount"
-                            class="text-sm font-medium text-primary bg-accent px-3 py-1 rounded-full border border-border-green">--</span>
+                <div class="col-main flex-col gap-md">
+                    <div class="flex-between mb-sm">
+                        <h2 class="text-xl bold text-dark">Registered Families</h2>
+                        <span id="familiesCount" class="count-badge">--</span>
                     </div>
-                    <div id="familiesListContainer" class="space-y-6">
-                        <div class="text-center py-10 text-text-secondary">Loading families...</div>
+                    <div id="familiesListContainer" class="flex-col gap-lg">
+                        <div class="text-center p-md text-light">Loading families...</div>
                     </div>
                 </div>
             </div>
@@ -159,69 +127,61 @@
     </main>
 
     <!-- Register Family Modal -->
-    <div id="familyModal"
-        class="fixed inset-0 z-50 bg-black/30 hidden items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white border border-border-green w-full max-w-md rounded-2xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-slate-800">Register New Family</h2>
-                <button onclick="closeFamilyModal()" class="text-slate-400 hover:text-slate-600">
+    <div id="familyModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="modal-title">Register New Family</h2>
+                <button onclick="closeFamilyModal()" class="modal-close">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <form onsubmit="saveFamily(event)" class="space-y-4">
+            <form onsubmit="saveFamily(event)" class="flex-col gap-md">
                 <div>
-                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Family
-                        Name</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">badge</span>
-                        <input id="familyName" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="e.g. Johnson" type="text" />
+                    <label class="label">Family Name</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">badge</span>
+                        <input id="familyName" required class="input input-with-icon" placeholder="e.g. Johnson"
+                            type="text" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Head of
-                        Household</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">person</span>
-                        <input id="headName" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="e.g. Michael" type="text" />
+                    <label class="label">Head of Household</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon"
+                            style="top:22px;transform:none;">person</span>
+                        <input id="headName" required class="input input-with-icon" placeholder="e.g. Michael"
+                            type="text" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Phone
-                        Number</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">call</span>
-                        <input id="phoneNumber" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-4 py-3 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="+919876543210" type="tel" />
+                    <label class="label">Phone Number</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">call</span>
+                        <input id="phoneNumber" required class="input input-with-icon" placeholder="+919876543210"
+                            type="tel" />
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">Assign
-                        Ward</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400">location_on</span>
-                        <select id="modalWardSelect" required
-                            class="w-full bg-slate-50 border border-border-green rounded-xl pl-10 pr-10 py-3 text-slate-900 appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <label class="label">Assign Ward</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon"
+                            style="top:22px;transform:none;">location_on</span>
+                        <select id="modalWardSelect" required class="select">
                             <option value="">Select a Ward...</option>
                         </select>
-                        <span
-                            class="material-symbols-outlined absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                        <span class="material-symbols-outlined input-icon-right"
+                            style="top:22px;transform:none;">expand_more</span>
                     </div>
                 </div>
-                <button type="submit"
-                    class="w-full bg-primary text-white font-bold text-lg py-4 rounded-xl shadow-md shadow-primary/25 active:scale-95 transition-transform mt-6 hover:bg-primary-dark">
+                <button type="submit" class="btn btn-primary-lg mt-lg">
                     Register Family
                 </button>
             </form>
         </div>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/families.js"></script>
+    <script src="/static/js/api.js?v=3"></script>
+    <script src="/static/js/families.js?v=3"></script>
 </body>
 
 </html>

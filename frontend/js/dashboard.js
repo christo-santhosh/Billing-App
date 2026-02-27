@@ -6,15 +6,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeSidebarBtn = document.getElementById('closeSidebar');
 
     function toggleSidebar() {
-        const isClosed = sidebar.classList.contains('-translate-x-full');
-        if (isClosed) {
-            sidebar.classList.remove('-translate-x-full');
-            sidebarOverlay.classList.remove('hidden');
-        } else {
-            sidebar.classList.add('-translate-x-full');
+        const isOpen = sidebar.classList.contains('open');
+        if (isOpen) {
+            sidebar.classList.remove('open');
             setTimeout(() => {
-                sidebarOverlay.classList.add('hidden');
+                sidebarOverlay.classList.remove('show');
             }, 300);
+        } else {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('show');
         }
     }
 
@@ -31,8 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         ]);
 
         document.getElementById('loadingIndicator').classList.add('hidden');
-        document.getElementById('dashboardContent').classList.remove('hidden');
-        document.getElementById('dashboardContent').classList.add('flex');
+        const dashContent = document.getElementById('dashboardContent');
+        dashContent.classList.remove('hidden');
+        dashContent.style.display = 'flex';
 
         // Populate Top Ward
         if (wardAnalysis.ward_with_most_purchases) {
@@ -49,22 +50,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bdList = document.getElementById('wardBreakdownList');
         bdList.innerHTML = '';
 
-        const colors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500', 'bg-blue-500'];
+        const dotColors = ['dot-green', 'dot-purple', 'dot-emerald', 'dot-orange', 'dot-pink', 'dot-blue'];
 
         wardAnalysis.ward_revenue.forEach((ward, index) => {
             const revenue = parseFloat(ward.total_revenue || 0);
             totalRevenueAllTime += revenue;
 
-            const colorClass = colors[index % colors.length];
+            const dotClass = dotColors[index % dotColors.length];
             const itemHTML = `
-                <div class="flex items-center justify-between p-3 rounded-lg bg-background-dark border border-slate-800 hover:bg-slate-800/50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <span class="w-3 h-3 rounded-full ${colorClass} ring-2 ring-white/10"></span>
-                        <span class="text-sm font-medium text-slate-900">${ward.ward_name}</span>
+                <div class="ward-breakdown-item">
+                    <div class="flex-row gap-md">
+                        <span class="dot ${dotClass}"></span>
+                        <span class="text-sm medium text-dark">${ward.ward_name}</span>
                     </div>
                     <div class="text-right">
-                        <span class="block text-sm font-bold text-white">${formatCurrency(revenue)}</span>
-                        <span class="text-xs text-slate-500">${ward.purchase_count} Orders</span>
+                        <span class="text-sm bold text-dark" style="display:block;">${formatCurrency(revenue)}</span>
+                        <span class="text-xs text-light">${ward.purchase_count} Orders</span>
                     </div>
                 </div>
             `;
@@ -74,9 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('statTotalRevenue').textContent = formatCurrency(totalRevenueAllTime);
 
         // ── Revenue Chart ──────────────────────────────────────────────────
-        // Prepare datasets from API response
         function prepareChartData(records, dateKey, count = 10) {
-            // Sort ascending and take last `count` entries
             const sorted = [...records]
                 .filter(r => r[dateKey] && r.revenue)
                 .sort((a, b) => new Date(a[dateKey]) - new Date(b[dateKey]))
@@ -96,7 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             year: prepareChartData(revenueData.annually, 'year', 10),
         };
 
-        // Build Chart.js chart
         const ctx = document.getElementById('revenueChart').getContext('2d');
 
         function makeGradient() {
@@ -166,13 +164,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btnMonth = document.getElementById('btnMonth');
         const btnYear = document.getElementById('btnYear');
 
-        const activeClass = ['bg-white', 'text-primary-dark', 'shadow-sm', 'border', 'border-slate-100'];
-        const inactiveClass = ['text-slate-500'];
-
         function setActiveBtn(active) {
             [btnWeek, btnMonth, btnYear].forEach(btn => {
-                btn.classList.remove(...activeClass, ...inactiveClass);
-                btn.classList.add(...(btn === active ? activeClass : inactiveClass));
+                btn.classList.remove('active');
+                if (btn === active) btn.classList.add('active');
             });
         }
 
@@ -195,6 +190,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Dashboard failed to load:", error);
         document.getElementById('loadingIndicator').textContent = "Failed to load dashboard data. Check backend connection.";
-        document.getElementById('loadingIndicator').className = "text-center py-10 text-red-500";
+        document.getElementById('loadingIndicator').className = "text-center p-md text-red";
     }
 });

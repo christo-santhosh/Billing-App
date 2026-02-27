@@ -8,172 +8,135 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#16a34a",
-                        "primary-dark": "#15803d",
-                        "accent": "#dcfce7",
-                        "border-green": "#bbf7d0",
-                    },
-                    fontFamily: { "display": ["Manrope", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
 </head>
 
-<body class="bg-slate-50 font-display text-slate-900 overflow-hidden h-screen w-full flex">
+<body class="page">
 
     <!-- Sidebar -->
-    <div id="sidebar"
-        class="flex flex-col w-64 bg-white border-r border-border-green h-full shrink-0 absolute md:relative z-50 transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-sm">
-        <div class="px-6 py-5 flex items-center justify-between border-b border-border-green">
-            <h2 class="text-xl font-bold text-green-800 tracking-tight flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">church</span>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-logo">
+                <span class="material-symbols-outlined">church</span>
                 Church Portal
             </h2>
-            <button id="closeSidebar" class="md:hidden text-slate-400 hover:text-primary">
+            <button id="closeSidebar" class="sidebar-close">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
-        <nav class="flex-1 flex flex-col gap-1 p-4">
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/">
+        <nav class="sidebar-nav">
+            <a class="nav-link" href="/">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/pos/">
+            <a class="nav-link" href="/pos/">
                 <span class="material-symbols-outlined">point_of_sale</span> POS Billing
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 bg-accent text-primary rounded-xl font-bold" href="/inventory/">
+            <a class="nav-link active" href="/inventory/">
                 <span class="material-symbols-outlined">inventory_2</span> Inventory
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/families/">
+            <a class="nav-link" href="/families/">
                 <span class="material-symbols-outlined">groups</span> Members &amp; Wards
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-accent rounded-xl font-medium transition-colors"
-                href="/sales/">
+            <a class="nav-link" href="/sales/">
                 <span class="material-symbols-outlined">history</span> Sales History
             </a>
         </nav>
     </div>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-50 min-h-0">
+    <main class="main-content">
         <!-- Header -->
-        <header
-            class="flex items-center justify-between px-6 py-4 bg-white border-b border-border-green shrink-0 shadow-sm">
-            <div class="flex items-center gap-3">
-                <button id="openSidebar"
-                    class="md:hidden p-2 -ml-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-accent">
-                    <span class="material-symbols-outlined text-[24px]">menu</span>
+        <header class="page-header">
+            <div class="topbar-left">
+                <button id="openSidebar" class="menu-btn">
+                    <span class="material-symbols-outlined">menu</span>
                 </button>
                 <div>
-                    <h1 class="text-2xl font-bold leading-tight tracking-tight text-slate-800">Inventory</h1>
-                    <p class="text-sm text-slate-500">Manage church supplies &amp; stock</p>
+                    <h1 class="topbar-title">Inventory</h1>
+                    <p class="topbar-subtitle">Manage church supplies &amp; stock</p>
                 </div>
             </div>
-            <button onclick="openAddModal()"
-                class="bg-primary hover:bg-primary-dark text-white h-10 px-4 rounded-lg flex items-center gap-2 font-semibold shadow-md shadow-primary/20 transition-all active:scale-95">
-                <span class="material-symbols-outlined text-[20px]">add</span>
-                <span class="hidden sm:inline">Add Product</span>
+            <button onclick="openAddModal()" class="btn btn-primary">
+                <span class="material-symbols-outlined" style="font-size:20px;">add</span>
+                <span class="desktop-only">Add Product</span>
             </button>
         </header>
 
         <!-- Search -->
-        <div class="px-6 py-4 bg-white border-b border-border-green">
-            <div class="relative flex-1">
-                <span
-                    class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined">search</span>
-                <input
-                    class="w-full h-11 pl-10 pr-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-400 shadow-sm"
-                    placeholder="Search items..." type="text" />
+        <div class="search-section">
+            <div class="input-wrapper">
+                <span class="material-symbols-outlined input-icon">search</span>
+                <input class="input input-with-icon" placeholder="Search items..." type="text" />
             </div>
         </div>
 
         <!-- Inventory List -->
-        <div class="flex-1 overflow-y-auto px-6 py-4">
-            <div
-                class="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                <div class="col-span-1">ID</div>
-                <div class="col-span-4">Product Name</div>
-                <div class="col-span-2 text-center">Stock</div>
-                <div class="col-span-2 text-center">Unit</div>
-                <div class="col-span-2 text-right">Price</div>
-                <div class="col-span-1"></div>
+        <div class="content-area">
+            <div class="inv-header-row">
+                <div class="inv-col-1">ID</div>
+                <div class="inv-col-4">Product Name</div>
+                <div class="inv-col-2 text-center">Stock</div>
+                <div class="inv-col-2 text-center">Unit</div>
+                <div class="inv-col-2 text-right">Price</div>
+                <div class="inv-col-1"></div>
             </div>
 
-            <div id="loadingIndicator" class="text-center py-10 text-slate-400">Loading inventory...</div>
-            <div id="inventoryList" class="flex flex-col gap-3"></div>
+            <div id="loadingIndicator" class="text-center p-md text-muted">Loading inventory...</div>
+            <div id="inventoryList" class="flex-col gap-md"></div>
         </div>
     </main>
 
     <!-- Product Modal -->
-    <div id="productModal"
-        class="absolute inset-0 z-50 flex items-center justify-center bg-black/30 hidden backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-border-green">
-            <div class="px-6 py-4 border-b border-border-green flex justify-between items-center">
+    <div id="productModal" class="modal-overlay">
+        <div class="modal-box" style="padding:0; overflow:hidden;">
+            <div class="flex-between" style="padding:16px 24px; border-bottom:1px solid var(--border-green);">
                 <div>
-                    <h2 id="modalTitle" class="text-lg font-bold text-slate-900">Product</h2>
-                    <p class="text-xs text-slate-500">Fill in details below</p>
+                    <h2 id="modalTitle" class="text-lg bold text-dark">Product</h2>
+                    <p class="text-xs text-light">Fill in details below</p>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                <button onclick="closeModal()" class="modal-close">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <form id="productForm" onsubmit="saveProduct(event)">
                 <input type="hidden" id="productId">
-                <div class="p-6 space-y-4">
+                <div class="modal-body flex-col gap-md">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Product Name</label>
-                        <input id="productName" required
-                            class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
-                            type="text" placeholder="e.g. Candles" />
+                        <label class="label-sm">Product Name</label>
+                        <input id="productName" required class="input" type="text" placeholder="e.g. Candles" />
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="form-row">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Stock Level</label>
-                            <input id="productStock" required min="0" step="0.01"
-                                class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
-                                type="number" placeholder="Qty" />
+                            <label class="label-sm">Stock Level</label>
+                            <input id="productStock" required min="0" step="0.01" class="input" type="number"
+                                placeholder="Qty" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Unit</label>
-                            <input id="productUnit" required
-                                class="w-full h-11 px-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
-                                type="text" placeholder="pcs, kg" />
+                            <label class="label-sm">Unit</label>
+                            <input id="productUnit" required class="input" type="text" placeholder="pcs, kg" />
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Unit Price (₹)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
-                            <input id="productPrice" required min="0" step="0.01"
-                                class="w-full h-11 pl-8 pr-4 bg-slate-50 border border-border-green rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-slate-900"
+                        <label class="label-sm">Unit Price (₹)</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon" style="color:var(--text-light);">₹</span>
+                            <input id="productPrice" required min="0" step="0.01" class="input input-with-icon"
                                 type="number" placeholder="0.00" />
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-slate-50 border-t border-border-green flex gap-3">
-                    <button type="button" onclick="closeModal()"
-                        class="flex-1 h-11 rounded-lg border border-border-green text-slate-700 font-semibold hover:bg-accent transition-colors">Cancel</button>
-                    <button type="submit"
-                        class="flex-1 h-11 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark shadow-md transition-all">Save</button>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-outline flex-1">Cancel</button>
+                    <button type="submit" class="btn btn-primary flex-1">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/inventory.js"></script>
+    <script src="/static/js/api.js?v=3"></script>
+    <script src="/static/js/inventory.js?v=3"></script>
 </body>
 
 </html>

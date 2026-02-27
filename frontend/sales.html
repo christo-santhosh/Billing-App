@@ -8,86 +8,65 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#16a34a",
-                        "primary-dark": "#15803d",
-                        "accent": "#dcfce7",
-                        "border-green": "#bbf7d0",
-                    },
-                    fontFamily: { "display": ["Manrope", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
 </head>
 
-<body class="bg-slate-50 font-display text-slate-900 antialiased h-screen flex flex-col overflow-hidden">
+<body class="page-col">
 
     <!-- Top App Bar -->
-    <header
-        class="flex items-center justify-between px-4 py-3 bg-white border-b border-border-green shrink-0 z-20 shadow-sm">
-        <a href="/" class="p-2 -ml-2 rounded-full hover:bg-accent text-slate-600 transition-colors">
+    <header class="topbar-simple">
+        <a href="/" class="btn-back">
             <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <div class="flex items-center gap-2">
+        <div class="flex-row gap-sm">
             <span class="material-symbols-outlined text-primary text-2xl">history</span>
-            <h1 class="text-lg font-bold tracking-tight text-slate-800">Sales History</h1>
+            <h1 class="topbar-title">Sales History</h1>
         </div>
         <!-- Spacer to balance header -->
-        <div class="w-10"></div>
+        <div class="spacer"></div>
     </header>
 
-    <main class="flex-1 flex flex-col overflow-hidden min-h-0">
+    <main class="main-content">
 
         <!-- Search + Filters (sticky) -->
-        <div class="bg-white border-b border-border-green px-4 pt-3 pb-3 shrink-0 space-y-3 z-10">
+        <div class="filter-section flex-col gap-md">
             <!-- Search -->
-            <div class="relative">
-                <span
-                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                <input id="searchInput" autocomplete="off"
-                    class="w-full bg-slate-50 border border-border-green rounded-xl h-11 pl-10 pr-4 text-sm font-medium focus:ring-2 focus:ring-primary focus:bg-white transition-all shadow-sm text-slate-800"
+            <div class="input-wrapper">
+                <span class="material-symbols-outlined input-icon" style="font-size:20px;">search</span>
+                <input id="searchInput" autocomplete="off" class="input input-with-icon"
                     placeholder="Search by name, phone…" type="text">
             </div>
             <!-- Filter Chips -->
-            <div class="flex gap-2">
-                <button id="filterAll"
-                    class="flex-1 py-2 rounded-xl text-sm font-bold transition-all bg-primary text-white shadow-sm">All</button>
-                <button id="filterCash"
-                    class="flex-1 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 bg-slate-100">
-                    <span class="material-symbols-outlined text-[14px] align-middle">currency_rupee</span> Cash
+            <div class="chip-row">
+                <button id="filterAll" class="chip active">All</button>
+                <button id="filterCash" class="chip">
+                    <span class="material-symbols-outlined"
+                        style="font-size:14px; vertical-align:middle;">currency_rupee</span> Cash
                 </button>
-                <button id="filterUpi"
-                    class="flex-1 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 bg-slate-100">
-                    <span class="material-symbols-outlined text-[14px] align-middle">qr_code_scanner</span> UPI
+                <button id="filterUpi" class="chip">
+                    <span class="material-symbols-outlined"
+                        style="font-size:14px; vertical-align:middle;">qr_code_scanner</span> UPI
                 </button>
             </div>
         </div>
 
         <!-- Summary Strip -->
-        <div id="summaryStrip"
-            class="bg-accent border-b border-border-green px-4 py-2 flex items-center justify-between shrink-0">
-            <span id="summaryCount" class="text-xs font-bold text-primary-dark">-- transactions</span>
-            <span id="summaryTotal" class="text-sm font-extrabold text-primary">₹--</span>
+        <div id="summaryStrip" class="summary-strip">
+            <span id="summaryCount" class="text-xs bold text-primary-dark">-- transactions</span>
+            <span id="summaryTotal" class="text-sm extra-bold text-primary">₹--</span>
         </div>
 
         <!-- Invoice List -->
-        <div class="flex-1 overflow-y-auto px-4 py-4" id="invoiceListContainer">
-            <div class="text-center py-16 text-slate-400">
-                <span class="material-symbols-outlined text-5xl mb-2 block">hourglass_empty</span>
+        <div class="content-area" id="invoiceListContainer">
+            <div class="text-center text-muted" style="padding:64px 0;">
+                <span class="material-symbols-outlined text-5xl mb-sm" style="display:block;">hourglass_empty</span>
                 Loading transactions…
             </div>
         </div>
     </main>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/sales.js"></script>
+    <script src="/static/js/api.js?v=3"></script>
+    <script src="/static/js/sales.js?v=3"></script>
 </body>
 
 </html>

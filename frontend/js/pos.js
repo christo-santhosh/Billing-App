@@ -35,11 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleCart = () => {
         isCartOpen = !isCartOpen;
         if (isCartOpen) {
-            cartSheet.classList.remove('translate-y-[calc(100%-70px)]');
-            cartSheet.classList.add('translate-y-0');
+            cartSheet.classList.add('open');
         } else {
-            cartSheet.classList.remove('translate-y-0');
-            cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+            cartSheet.classList.remove('open');
         }
     };
 
@@ -49,18 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     downloadPdfBtn.addEventListener('click', downloadCurrentPdf);
     if (clearFamilyBtn) clearFamilyBtn.addEventListener('click', clearFamilySelection);
 
-    // Payment method toggle — replace full className to avoid Tailwind CDN JIT issues
-    const BASE_BTN = 'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-bold transition-all';
-    const ACTIVE_BTN = `${BASE_BTN} bg-primary text-white shadow-sm`;
-    const INACTIVE_BTN = `${BASE_BTN} text-slate-500`;
-
+    // Payment method toggle
     function setPaymentMethod(method) {
         if (method === 'CASH') {
-            payMethodCash.className = ACTIVE_BTN;
-            payMethodUpi.className = INACTIVE_BTN;
+            payMethodCash.classList.add('active');
+            payMethodUpi.classList.remove('active');
         } else {
-            payMethodUpi.className = ACTIVE_BTN;
-            payMethodCash.className = INACTIVE_BTN;
+            payMethodUpi.classList.add('active');
+            payMethodCash.classList.remove('active');
         }
         payMethodCash.dataset.active = method === 'CASH' ? 'true' : 'false';
     }
@@ -123,18 +117,18 @@ function renderSearchResults(results) {
     familySearchList.innerHTML = '';
 
     if (results.length === 0) {
-        familySearchList.innerHTML = '<li class="p-4 text-center text-sm text-slate-500">No families found.</li>';
+        familySearchList.innerHTML = '<li class="text-center text-sm text-light" style="padding:16px;">No families found.</li>';
     } else {
         results.forEach(f => {
             const li = document.createElement('li');
-            li.className = "flex items-center gap-3 p-3 hover:bg-accent cursor-pointer transition-colors";
+            li.className = "search-item";
             li.innerHTML = `
-                <div class="h-8 w-8 rounded-full bg-green-100 text-primary-dark flex items-center justify-center font-bold text-xs shrink-0">
+                <div class="avatar-sm" style="background:var(--green-100); color:var(--primary-dark);">
                     ${f.family_name.charAt(0).toUpperCase()}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-slate-900 truncate">${f.family_name} Family</p>
-                    <p class="text-xs text-slate-500 truncate">Head: ${f.head_name} | ${f.phone_number}</p>
+                <div class="flex-1" style="min-width:0;">
+                    <p class="text-sm bold text-dark truncate">${f.family_name} Family</p>
+                    <p class="text-xs text-light truncate">Head: ${f.head_name} | ${f.phone_number}</p>
                 </div>
             `;
             li.addEventListener('click', () => selectFamily(f));
@@ -152,7 +146,7 @@ function selectFamily(family) {
     familySearchState.classList.add('hidden');
     familySearchResults.classList.add('hidden');
     familySelectedState.classList.remove('hidden');
-    familySelectedState.classList.add('flex');
+    familySelectedState.style.display = 'flex';
 }
 
 function clearFamilySelection() {
@@ -160,19 +154,17 @@ function clearFamilySelection() {
     familySearchInput.value = '';
 
     familySelectedState.classList.add('hidden');
-    familySelectedState.classList.remove('flex');
+    familySelectedState.style.display = '';
     familySearchState.classList.remove('hidden');
     familySearchInput.focus();
 }
 
 function openFamilyModal() {
-    familyModal.classList.remove('hidden');
-    familyModal.classList.add('flex');
+    familyModal.classList.add('show');
 }
 
 function closeFamilyModal() {
-    familyModal.classList.add('hidden');
-    familyModal.classList.remove('flex');
+    familyModal.classList.remove('show');
 }
 
 async function saveFamily(e) {
@@ -187,7 +179,7 @@ async function saveFamily(e) {
     };
 
     try {
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Registering...';
+        btn.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Registering...';
         btn.disabled = true;
 
         const newFamily = await fetchAPI('/families/', {
@@ -218,7 +210,7 @@ async function loadProducts() {
         products = await fetchAPI('/products/');
         renderProducts();
     } catch (e) {
-        productGrid.innerHTML = '<div class="col-span-full text-center py-10 text-red-500">Failed to load products.</div>';
+        productGrid.innerHTML = '<div style="grid-column:1/-1;" class="text-center p-md text-red">Failed to load products.</div>';
     }
 }
 
@@ -226,7 +218,7 @@ function renderProducts() {
     productGrid.innerHTML = '';
 
     const icons = ['cookie', 'light_mode', 'menu_book', 'wine_bar', 'cleaning_services', 'inventory_2'];
-    const colors = ['bg-green-50 text-green-700', 'bg-emerald-50 text-emerald-700', 'bg-teal-50 text-teal-700', 'bg-lime-50 text-lime-700', 'bg-green-100 text-green-800', 'bg-slate-50 text-slate-600'];
+    const colorClasses = ['icon-green', 'icon-emerald', 'icon-teal', 'icon-lime', 'icon-green-dark', 'icon-slate'];
 
     products.forEach(p => {
         if (p.stock_quantity <= 0) return;
@@ -234,17 +226,17 @@ function renderProducts() {
         const iconIndex = p.id % icons.length;
 
         const html = `
-        <div onclick="addToCart(${p.id})" class="bg-white rounded-xl p-3 shadow-sm flex flex-col gap-2 group cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all select-none border border-border-green">
-            <div class="aspect-square w-full rounded-lg ${colors[iconIndex]} flex items-center justify-center overflow-hidden relative border border-white">
-                <span class="material-symbols-outlined text-4xl opacity-40">${icons[iconIndex]}</span>
-                <button class="absolute bottom-2 right-2 h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform">
-                    <span class="material-symbols-outlined text-[18px]">add</span>
+        <div onclick="addToCart(${p.id})" class="product-card">
+            <div class="product-icon-box ${colorClasses[iconIndex]}">
+                <span class="material-symbols-outlined">${icons[iconIndex]}</span>
+                <button class="product-add-btn">
+                    <span class="material-symbols-outlined">add</span>
                 </button>
             </div>
             <div>
-                <h3 class="font-bold text-sm leading-tight text-slate-800 truncate">${p.name}</h3>
-                <p class="text-xs text-slate-500 mt-1">${formatCurrency(p.price)} <span class="text-[10px] opacity-70">/${p.unit}</span></p>
-                <p class="text-[10px] text-slate-400 mt-0.5">${p.stock_quantity} in stock</p>
+                <h3 class="product-name truncate">${p.name}</h3>
+                <p class="product-price">${formatCurrency(p.price)} <span class="text-xs text-muted">/${p.unit}</span></p>
+                <p class="product-stock">${p.stock_quantity} in stock</p>
             </div>
         </div>
         `;
@@ -294,7 +286,7 @@ function renderCart() {
     let total = 0;
 
     if (cart.length === 0) {
-        cartItemsList.innerHTML = '<div class="text-center text-slate-500 text-sm py-4">Cart is empty</div>';
+        cartItemsList.innerHTML = '<div class="text-center text-light text-sm" style="padding:16px 0;">Cart is empty</div>';
         completeBillBtn.disabled = true;
     } else {
         completeBillBtn.disabled = false;
@@ -304,25 +296,25 @@ function renderCart() {
             total += itemTotal;
 
             const icons = ['cookie', 'light_mode', 'menu_book', 'wine_bar', 'cleaning_services', 'inventory_2'];
-            const colors = ['bg-green-50 text-green-700', 'bg-emerald-50 text-emerald-700', 'bg-teal-50 text-teal-700', 'bg-lime-50 text-lime-700', 'bg-green-100 text-green-800', 'bg-slate-50 text-slate-600'];
+            const colorClasses = ['icon-green', 'icon-emerald', 'icon-teal', 'icon-lime', 'icon-green-dark', 'icon-slate'];
             const iconIndex = item.product.id % icons.length;
 
             const html = `
-            <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-lg ${colors[iconIndex]} flex items-center justify-center shrink-0 border border-white">
-                    <span class="material-symbols-outlined text-[20px]">${icons[iconIndex]}</span>
+            <div class="cart-item">
+                <div class="cart-item-icon ${colorClasses[iconIndex]}">
+                    <span class="material-symbols-outlined">${icons[iconIndex]}</span>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-baseline">
-                        <h4 class="text-sm font-medium text-slate-800 truncate">${item.product.name}</h4>
-                        <span class="text-sm font-bold text-primary">${formatCurrency(itemTotal)}</span>
+                <div class="flex-1" style="min-width:0;">
+                    <div class="cart-item-row">
+                        <h4 class="cart-item-name truncate">${item.product.name}</h4>
+                        <span class="cart-item-total">${formatCurrency(itemTotal)}</span>
                     </div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-xs text-slate-400">${formatCurrency(item.product.price)}/${item.product.unit}</span>
-                        <div class="flex items-center gap-2 bg-slate-100 rounded-md px-1.5 py-0.5">
-                            <button onclick="updateQuantity(${item.product.id}, -1)" class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">remove</span></button>
-                            <span class="text-xs font-mono text-slate-800 w-8 text-center">${item.quantity}</span>
-                            <button onclick="updateQuantity(${item.product.id}, 1)" class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">add</span></button>
+                    <div class="flex-between mt-sm">
+                        <span class="cart-item-price">${formatCurrency(item.product.price)}/${item.product.unit}</span>
+                        <div class="qty-control">
+                            <button onclick="updateQuantity(${item.product.id}, -1)" class="qty-btn"><span class="material-symbols-outlined">remove</span></button>
+                            <span class="qty-value">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.product.id}, 1)" class="qty-btn"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </div>
                 </div>
@@ -347,9 +339,7 @@ async function completeTransaction() {
 
     if (!familyId) {
         alert("Please select a family for the invoice.");
-        // Expand cart to show family select if hidden (on mobile)
-        cartSheet.classList.remove('translate-y-0');
-        cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+        cartSheet.classList.remove('open');
         return;
     }
 
@@ -370,7 +360,7 @@ async function completeTransaction() {
 
     try {
         completeBillBtn.disabled = true;
-        completeBillBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Processing...';
+        completeBillBtn.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Processing...';
 
         const response = await fetchAPI('/invoices/', {
             method: 'POST',
@@ -386,7 +376,7 @@ async function completeTransaction() {
         // Show Success Modal
         const methodLabel = paymentMethod === 'UPI' ? '📲 UPI' : '💵 Cash';
         document.getElementById('successInvoiceText').textContent = `Transaction #${response.id} recorded. Paid by ${methodLabel}.`;
-        successModal.classList.remove('hidden');
+        successModal.classList.add('show');
 
         // Refresh products stock locally
         await loadProducts();
@@ -403,12 +393,11 @@ async function downloadCurrentPdf() {
     if (!lastInvoiceId) return;
 
     try {
-        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Downloading...';
+        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Downloading...';
         downloadPdfBtn.disabled = true;
 
         const blob = await fetchAPI(`/invoices/${lastInvoiceId}/generate_pdf/`, { isDownload: true });
 
-        // Create link and trigger download
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -417,21 +406,20 @@ async function downloadCurrentPdf() {
         document.body.appendChild(a);
         a.click();
 
-        // Cleanup
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
     } catch (e) {
         alert("Failed to download PDF.");
     } finally {
-        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">download</span> Download PDF';
+        downloadPdfBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">download</span> Download PDF';
         downloadPdfBtn.disabled = false;
     }
 }
 
 function closeSuccessModal() {
-    successModal.classList.add('hidden');
-    startNewTransaction(); // Reset cart behind the scenes
+    successModal.classList.remove('show');
+    startNewTransaction();
 }
 
 window.startNewTransaction = function () {
@@ -439,9 +427,8 @@ window.startNewTransaction = function () {
     clearFamilySelection();
     lastInvoiceId = null;
     renderCart();
-    successModal.classList.add('hidden');
+    successModal.classList.remove('show');
 
     // Minimize cart sheet
-    cartSheet.classList.remove('translate-y-0');
-    cartSheet.classList.add('translate-y-[calc(100%-70px)]');
+    cartSheet.classList.remove('open');
 }
