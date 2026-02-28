@@ -108,45 +108,10 @@
             </a>
         </div>
 
-        <div id="loadingIndicator" class="text-center p-md text-muted">Loading analytics...</div>
 
-        <div id="dashboardContent" class="hidden flex-col gap-lg">
 
-            <!-- Revenue Trends Chart -->
-            <div class="card">
-                <div class="flex-between mb-md">
-                    <div>
-                        <h3 class="text-lg bold text-dark">Revenue Trends</h3>
-                        <p class="text-xs text-light">Income over time</p>
-                    </div>
-                    <div class="chart-toggle">
-                        <button id="btnWeek" class="toggle-btn">Week</button>
-                        <button id="btnMonth" class="toggle-btn active">Month</button>
-                        <button id="btnYear" class="toggle-btn">Year</button>
-                    </div>
-                </div>
-                <div class="chart-box">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Ward Sales Analysis (Doughnut) -->
-            <div class="card">
-                <h3 class="text-lg bold text-dark mb-md">Ward Sales Analysis</h3>
-                <div class="doughnut-box">
-                    <canvas id="wardDoughnut"></canvas>
-                    <div class="doughnut-center">
-                        <span id="totalOrders" class="text-2xl extra-bold text-dark">--</span>
-                        <p class="text-xs text-light">Total Orders</p>
-                    </div>
-                </div>
-                <div id="wardLegend" class="mt-lg"></div>
-            </div>
-        </div>
-    </main>
-
-    <script src="/static/js/api.js?v=4"></script>
-    <script src="/static/js/dashboard.js?v=4"></script>
+        <script src="/static/js/api.js?v=4"></script>
+        <script src="/static/js/dashboard.js?v=4"></script>
 </body>
 
 </html>
