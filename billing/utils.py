@@ -101,12 +101,12 @@ def generate_invoice_pdf(invoice_id):
             item.product.name,
             str(item.quantity),
             item.product.unit,
-            f"₹ {item.price:.2f}",
-            f"₹ {line_total:.2f}"
+            f"Rs. {item.price:.2f}",
+            f"Rs. {line_total:.2f}"
         ])
         
     # Add Total Row
-    table_data.append(["", "", "", "Grand Total:", f"₹ {invoice.total_amount:.2f}"])
+    table_data.append(["", "", "", "Grand Total:", f"Rs. {invoice.total_amount:.2f}"])
     
     item_table = Table(table_data, colWidths=['40%', '15%', '15%', '15%', '15%'])
     
