@@ -18,4 +18,5 @@ urlpatterns = [
     path('families/', serve_page('families.html'), name='families'),
     path('inventory/', serve_page('inventory.html'), name='inventory'),
     path('sales/', serve_page('sales.html'), name='sales'),
+    path('analytics/', serve_page('analytics.html'), name='analytics'),
 ]

@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Billing App{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header & Filter Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Advanced Analytics</h1>
+                <p class="text-sm text-gray-500 mt-1">Insights across sales, wards, and products.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-2">
+                <button onclick="resetFilters()" class="text-sm px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+
+        <form id="filterForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <!-- Date Filter (Start) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input type="date" id="start_date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+            </div>
+            
+            <!-- Date Filter (End) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input type="date" id="end_date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+            </div>
+
+            <!-- Ward Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ward</label>
+                <select id="ward_id" name="ward_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">All Wards</option>
+                    <!-- Populated via JS -->
+                </select>
+            </div>
+
+            <!-- Family Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Family</label>
+                <select id="family_id" name="family_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">All Families</option>
+                    <!-- Populated via JS -->
+                </select>
+            </div>
+
+            <!-- Payment Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                <select id="payment_method" name="payment_method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">All Methods</option>
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">Card</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 1. Revenue & Sales Trend -->
+        <div class="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Revenue Trend</h2>
+            <div class="h-80 relative">
+                <canvas id="revenueTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. Ward Performance Breakdown -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Ward Performance</h2>
+            <div class="h-64 relative">
+                <canvas id="wardPerformanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Top Performing Products -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Top 10 Products (Qty Sold)</h2>
+            <div class="h-64 relative">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 4. Top Spender Families -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Top 10 Families (By Revenue)</h2>
+            <div class="h-64 relative">
+                <canvas id="topFamiliesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 5. Payment Method Distribution -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Payment Methods</h2>
+            <div class="h-64 relative flex justify-center">
+                <canvas id="paymentMethodChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Global Chart instances to destroy/recreate on update
+    let charts = {
+        revenueTrend: null,
+        wardPerformance: null,
+        topProducts: null,
+        topFamilies: null,
+        paymentMethod: null
+    };
+
+    // Shared Colors to feel premium/agro theme 
+    const COLORS = [
+        '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
+        '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDropdowns();
+        fetchAnalyticsData();
+
+        // Listen for filter changes
+        const filterForm = document.getElementById('filterForm');
+        filterForm.addEventListener('change', () => {
+            fetchAnalyticsData(); // Refetch all charts on any dropdown/date change
+        });
+    });
+
+    function resetFilters() {
+        document.getElementById('filterForm').reset();
+        fetchAnalyticsData();
+    }
+
+    async function loadDropdowns() {
+        try {
+            // Load Wards
+            const wardRes = await fetch('/api/wards/');
+            const wardData = await wardRes.json();
+            const wardSelect = document.getElementById('ward_id');
+            wardData.forEach(ward => {
+                const opt = document.createElement('option');
+                opt.value = ward.id;
+                opt.textContent = `${ward.ward_name} (${ward.ward_number})`;
+                wardSelect.appendChild(opt);
+            });
+
+            // Load Families
+            const familyRes = await fetch('/api/families/');
+            const familyData = await familyRes.json();
+            const familySelect = document.getElementById('family_id');
+            familyData.forEach(family => {
+                const opt = document.createElement('option');
+                opt.value = family.id;
+                opt.textContent = family.family_name;
+                familySelect.appendChild(opt);
+            });
+        } catch (error) {
+            console.error("Failed to load filter dropdowns", error);
+        }
+    }
+
+    function getFilterParams() {
+        const params = new URLSearchParams();
+        const start = document.getElementById('start_date').value;
+        const end = document.getElementById('end_date').value;
+        const wardId = document.getElementById('ward_id').value;
+        const familyId = document.getElementById('family_id').value;
+        const payment = document.getElementById('payment_method').value;
+
+        if (start) params.append('start_date', start);
+        if (end) params.append('end_date', end);
+        if (wardId) params.append('ward_id', wardId);
+        if (familyId) params.append('family_id', familyId);
+        if (payment) params.append('payment_method', payment);
+
+        return params.toString();
+    }
+
+    async function fetchAnalyticsData() {
+        const query = getFilterParams();
+        const qs = query ? `?${query}` : '';
+
+        // Run fetches in parallel
+        Promise.all([
+            fetch(`/api/analytics/time_based_revenue/${qs}`).then(r => r.json()),
+            fetch(`/api/analytics/ward_wise_analysis/${qs}`).then(r => r.json()),
+            fetch(`/api/analytics/top_products/${qs}`).then(r => r.json()),
+            fetch(`/api/analytics/top_families/${qs}`).then(r => r.json()),
+            fetch(`/api/analytics/payment_methods/${qs}`).then(r => r.json())
+        ]).then(([trendData, wardData, productData, familyData, paymentData]) => {
+            renderRevenueTrend(trendData.trend);
+            renderWardPerformance(wardData.ward_revenue);
+            renderTopProducts(productData.top_products);
+            renderTopFamilies(familyData.top_families);
+            renderPaymentMethods(paymentData.payment_distribution);
+        }).catch(err => {
+            console.error("Failed fetching analytics", err);
+        });
+    }
+
+    function renderRevenueTrend(data) {
+        const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+        if (charts.revenueTrend) charts.revenueTrend.destroy();
+
+        if(!data || data.length === 0) {
+           data = []; // Handle empty gracefully
+        }
+
+        const labels = data.map(d => d.day);
+        const revenues = data.map(d => d.revenue);
+
+        charts.revenueTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Daily Revenue (₹)',
+                    data: revenues,
+                    borderColor: '#10B981', // Agro theme green
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4, // Smooth curve
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { 
+                        beginAtZero: true,
+                        grid: { borderDash: [2, 4], color: '#e5e7eb' },
+                        ticks: { callback: (value) => '₹' + value }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderWardPerformance(data) {
+        const ctx = document.getElementById('wardPerformanceChart').getContext('2d');
+        if (charts.wardPerformance) charts.wardPerformance.destroy();
+
+        const labels = data.map(d => d.family__ward__ward_name);
+        // Using total_revenue for this chart
+        const values = data.map(d => d.total_revenue);
+
+        charts.wardPerformance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue by Ward (₹)',
+                    data: values,
+                    backgroundColor: COLORS,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { callback: (value) => '₹' + value }}
+                }
+            }
+        });
+    }
+
+    function renderTopProducts(data) {
+        const ctx = document.getElementById('topProductsChart').getContext('2d');
+        if (charts.topProducts) charts.topProducts.destroy();
+
+        const labels = data.map(d => d.product__name);
+        const values = data.map(d => d.total_quantity);
+
+        charts.topProducts = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Units Sold',
+                    data: values,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)', // Modern Blue
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bar chart
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderTopFamilies(data) {
+        const ctx = document.getElementById('topFamiliesChart').getContext('2d');
+        if (charts.topFamilies) charts.topFamilies.destroy();
+
+        const labels = data.map(d => d.family__family_name);
+        const values = data.map(d => d.total_revenue);
+
+        charts.topFamilies = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Revenue (₹)',
+                    data: values,
+                    backgroundColor: 'rgba(245, 158, 11, 0.8)', // Amber
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { callback: (value) => '₹' + value } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderPaymentMethods(data) {
+        const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+        if (charts.paymentMethod) charts.paymentMethod.destroy();
+
+        const labels = data.map(d => d.payment_method);
+        const values = data.map(d => d.count);
+
+        // Simple color mapping for clarity
+        const bgColors = labels.map(l => {
+            if(l === 'CASH') return '#10B981';
+            if(l === 'UPI') return '#3B82F6';
+            if(l === 'CARD') return '#F59E0B';
+            return '#9CA3AF';
+        });
+
+        charts.paymentMethod = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: bgColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%', // makes it a thin donut
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { usePointStyle: true, boxWidth: 8 }
+                    }
+                }
+            }
+        });
+    }
+
+</script>
+{% endblock %}

@@ -61,42 +61,101 @@ class AnalyticsViewSet(viewsets.ViewSet):
     Custom API endpoints that return JSON data for analytics and reporting.
     """
 
-    @action(detail=False, methods=['get'])
-    def time_based_revenue(self, request):
+    def _get_filtered_invoices(self, request):
+        """Helper method to filter invoices based on query params."""
         invoices = Invoice.objects.all()
 
-        weekly = invoices.annotate(week=TruncWeek('date')).values('week').annotate(
-            revenue=Sum('total_amount'),
-            count=Count('id')
-        ).order_by('-week')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        ward_id = request.query_params.get('ward_id')
+        family_id = request.query_params.get('family_id')
+        payment_method = request.query_params.get('payment_method')
 
-        monthly = invoices.annotate(month=TruncMonth('date')).values('month').annotate(
-            revenue=Sum('total_amount'),
-            count=Count('id')
-        ).order_by('-month')
+        if start_date:
+            invoices = invoices.filter(date__date__gte=start_date)
+        if end_date:
+            invoices = invoices.filter(date__date__lte=end_date)
+        if ward_id:
+            invoices = invoices.filter(family__ward_id=ward_id)
+        if family_id:
+            invoices = invoices.filter(family_id=family_id)
+        if payment_method:
+            invoices = invoices.filter(payment_method=payment_method)
 
-        annually = invoices.annotate(year=TruncYear('date')).values('year').annotate(
+        return invoices
+
+    @action(detail=False, methods=['get'])
+    def time_based_revenue(self, request):
+        invoices = self._get_filtered_invoices(request)
+
+        # Truncate by day so the frontend can group it however it wants based on the date range
+        # For 'all time' or 'this year', daily might be too granular, but let the frontend handle aggregation
+        # or we return daily and let them chart it. We'll return dates for flexibility.
+        from django.db.models.functions import TruncDate
+        
+        daily = invoices.annotate(day=TruncDate('date')).values('day').annotate(
             revenue=Sum('total_amount'),
             count=Count('id')
-        ).order_by('-year')
+        ).order_by('day') # Order by day ascending for charts
 
         return Response({
-            'weekly': weekly,
-            'monthly': monthly,
-            'annually': annually
+            'trend': daily,
         })
 
     @action(detail=False, methods=['get'])
     def ward_wise_analysis(self, request):
-        # Total revenue generated per Ward and the Ward that made the most purchases
-        ward_data = Ward.objects.annotate(
-            total_revenue=Sum('families__invoices__total_amount'),
-            purchase_count=Count('families__invoices')
-        ).values('ward_name', 'total_revenue', 'purchase_count').order_by('-total_revenue')
+        invoices = self._get_filtered_invoices(request)
 
-        ward_most_purchases = max(ward_data, key=lambda x: x['purchase_count']) if ward_data else None
+        # Aggregate revenue and count per ward based on the filtered invoices
+        ward_data = invoices.values('family__ward__ward_name').annotate(
+            total_revenue=Sum('total_amount'),
+            purchase_count=Count('id')
+        ).order_by('-total_revenue')
 
         return Response({
             'ward_revenue': list(ward_data),
-            'ward_with_most_purchases': ward_most_purchases
+        })
+
+    @action(detail=False, methods=['get'])
+    def top_products(self, request):
+        invoices = self._get_filtered_invoices(request)
+
+        from .models import InvoiceItem
+        items = InvoiceItem.objects.filter(invoice__in=invoices)
+        
+        # Aggregate by product name
+        from django.db.models import F
+        product_data = items.values('product__name').annotate(
+            total_quantity=Sum('quantity'),
+            total_revenue=Sum(F('quantity') * F('price'))
+        ).order_by('-total_quantity')[:10] # Top 10
+
+        return Response({
+            'top_products': list(product_data),
+        })
+
+    @action(detail=False, methods=['get'])
+    def top_families(self, request):
+        invoices = self._get_filtered_invoices(request)
+
+        family_data = invoices.values('family__family_name', 'family__head_name').annotate(
+            total_revenue=Sum('total_amount'),
+            purchase_count=Count('id')
+        ).order_by('-total_revenue')[:10] # Top 10
+
+        return Response({
+            'top_families': list(family_data)
+        })
+
+    @action(detail=False, methods=['get'])
+    def payment_methods(self, request):
+        invoices = self._get_filtered_invoices(request)
+
+        payment_data = invoices.values('payment_method').annotate(
+            count=Count('id'),
+            total_revenue=Sum('total_amount')
+        ).order_by('-count')
+
+        return Response({
+            'payment_distribution': list(payment_data)
         })

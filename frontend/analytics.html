@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Advanced Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+
+<body class="page-col" style="overflow-x: hidden;">
+
+    <!-- Top App Bar -->
+    <header class="topbar-simple">
+        <a href="/" class="btn-back">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div class="flex-row gap-sm">
+            <span class="material-symbols-outlined text-primary text-2xl">query_stats</span>
+            <h1 class="topbar-title">Advanced Analytics</h1>
+        </div>
+        <!-- Spacer to balance header -->
+        <div class="spacer"></div>
+    </header>
+
+    <main class="content-area flex-col gap-lg">
+
+        <!-- Header & Filter Form -->
+        <div class="card bg-white p-md">
+            <div class="flex-between mb-md">
+                <div>
+                    <h3 class="text-lg bold text-dark">Data Filters</h3>
+                    <p class="text-xs text-light">Filter insights across sales and wards.</p>
+                </div>
+                <button onclick="resetFilters()" class="btn btn-outline"
+                    style="padding: 4px 12px; font-size:12px;">Reset</button>
+            </div>
+
+            <form id="filterForm">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                    <!-- Date Filter (Start) -->
+                    <div class="form-group mb-0">
+                        <label class="label-sm">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" class="input"
+                            style="height:36px; padding:0 8px;">
+                    </div>
+
+                    <!-- Date Filter (End) -->
+                    <div class="form-group mb-0">
+                        <label class="label-sm">End Date</label>
+                        <input type="date" id="end_date" name="end_date" class="input"
+                            style="height:36px; padding:0 8px;">
+                    </div>
+
+                    <!-- Ward Filter -->
+                    <div class="form-group mb-0">
+                        <label class="label-sm">Ward</label>
+                        <select id="ward_id" name="ward_id" class="select" style="height:36px; padding:0 8px;">
+                            <option value="">All Wards</option>
+                        </select>
+                    </div>
+
+                    <!-- Family Filter -->
+                    <div class="form-group mb-0">
+                        <label class="label-sm">Family</label>
+                        <select id="family_id" name="family_id" class="select" style="height:36px; padding:0 8px;">
+                            <option value="">All Families</option>
+                        </select>
+                    </div>
+
+                    <!-- Payment Filter -->
+                    <div class="form-group mb-0">
+                        <label class="label-sm">Payment</label>
+                        <select id="payment_method" name="payment_method" class="select"
+                            style="height:36px; padding:0 8px;">
+                            <option value="">All Methods</option>
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Charts Grid -->
+        <div
+            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:16px; padding-bottom: 24px;">
+
+            <!-- 1. Revenue & Sales Trend -->
+            <div class="card p-md" style="grid-column: 1 / -1;">
+                <h3 class="text-lg bold text-dark mb-md">Revenue Trend</h3>
+                <div style="height: 300px; position:relative;">
+                    <canvas id="revenueTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 2. Ward Performance Breakdown -->
+            <div class="card p-md">
+                <h3 class="text-lg bold text-dark mb-md">Ward Performance</h3>
+                <div style="height: 250px; position:relative;">
+                    <canvas id="wardPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. Top Performing Products -->
+            <div class="card p-md">
+                <h3 class="text-lg bold text-dark mb-md">Top 10 Products (Qty Sold)</h3>
+                <div style="height: 250px; position:relative;">
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 4. Top Spender Families -->
+            <div class="card p-md">
+                <h3 class="text-lg bold text-dark mb-md">Top 10 Families (By Revenue)</h3>
+                <div style="height: 250px; position:relative;">
+                    <canvas id="topFamiliesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 5. Payment Method Distribution -->
+            <div class="card p-md">
+                <h3 class="text-lg bold text-dark mb-md">Payment Methods</h3>
+                <div style="height: 250px; position:relative; display:flex; justify-content:center;">
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Global Chart instances
+        let charts = {
+            revenueTrend: null,
+            wardPerformance: null,
+            topProducts: null,
+            topFamilies: null,
+            paymentMethod: null
+        };
+
+        const COLORS = [
+            '#16a34a', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
+            '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDropdowns();
+            fetchAnalyticsData();
+
+            // Listen for filter changes
+            const filterForm = document.getElementById('filterForm');
+            filterForm.addEventListener('change', () => {
+                fetchAnalyticsData();
+            });
+        });
+
+        function resetFilters() {
+            document.getElementById('filterForm').reset();
+            fetchAnalyticsData();
+        }
+
+        async function loadDropdowns() {
+            try {
+                // Load Wards
+                const wardRes = await fetch('/api/wards/');
+                const wardData = await wardRes.json();
+                const wardSelect = document.getElementById('ward_id');
+                wardData.forEach(ward => {
+                    const opt = document.createElement('option');
+                    opt.value = ward.id;
+                    opt.textContent = `${ward.ward_name} (${ward.ward_number})`;
+                    wardSelect.appendChild(opt);
+                });
+
+                // Load Families
+                const familyRes = await fetch('/api/families/');
+                const familyData = await familyRes.json();
+                const familySelect = document.getElementById('family_id');
+                familyData.forEach(family => {
+                    const opt = document.createElement('option');
+                    opt.value = family.id;
+                    opt.textContent = family.family_name;
+                    familySelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error("Failed to load filter dropdowns", error);
+            }
+        }
+
+        function getFilterParams() {
+            const params = new URLSearchParams();
+            const start = document.getElementById('start_date').value;
+            const end = document.getElementById('end_date').value;
+            const wardId = document.getElementById('ward_id').value;
+            const familyId = document.getElementById('family_id').value;
+            const payment = document.getElementById('payment_method').value;
+
+            if (start) params.append('start_date', start);
+            if (end) params.append('end_date', end);
+            if (wardId) params.append('ward_id', wardId);
+            if (familyId) params.append('family_id', familyId);
+            if (payment) params.append('payment_method', payment);
+
+            return params.toString();
+        }
+
+        async function fetchAnalyticsData() {
+            const query = getFilterParams();
+            const qs = query ? `?${query}` : '';
+
+            Promise.all([
+                fetch(`/api/analytics/time_based_revenue/${qs}`).then(r => r.json()),
+                fetch(`/api/analytics/ward_wise_analysis/${qs}`).then(r => r.json()),
+                fetch(`/api/analytics/top_products/${qs}`).then(r => r.json()),
+                fetch(`/api/analytics/top_families/${qs}`).then(r => r.json()),
+                fetch(`/api/analytics/payment_methods/${qs}`).then(r => r.json())
+            ]).then(([trendData, wardData, productData, familyData, paymentData]) => {
+                renderRevenueTrend(trendData.trend);
+                renderWardPerformance(wardData.ward_revenue);
+                renderTopProducts(productData.top_products);
+                renderTopFamilies(familyData.top_families);
+                renderPaymentMethods(paymentData.payment_distribution);
+            }).catch(err => {
+                console.error("Failed fetching analytics", err);
+            });
+        }
+
+        function renderRevenueTrend(data) {
+            const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+            if (charts.revenueTrend) charts.revenueTrend.destroy();
+
+            if (!data) data = [];
+
+            const labels = data.map(d => d.day);
+            const revenues = data.map(d => d.revenue);
+
+            charts.revenueTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Revenue (₹)',
+                        data: revenues,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [2, 4], color: '#e2e8f0' },
+                            ticks: { callback: (value) => '₹' + value }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderWardPerformance(data) {
+            const ctx = document.getElementById('wardPerformanceChart').getContext('2d');
+            if (charts.wardPerformance) charts.wardPerformance.destroy();
+
+            if (!data) data = [];
+            const labels = data.map(d => d.family__ward__ward_name);
+            const values = data.map(d => d.total_revenue);
+
+            charts.wardPerformance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue by Ward (₹)',
+                        data: values,
+                        backgroundColor: COLORS,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { callback: (value) => '₹' + value } }
+                    }
+                }
+            });
+        }
+
+        function renderTopProducts(data) {
+            const ctx = document.getElementById('topProductsChart').getContext('2d');
+            if (charts.topProducts) charts.topProducts.destroy();
+
+            if (!data) data = [];
+            const labels = data.map(d => d.product__name);
+            const values = data.map(d => d.total_quantity);
+
+            charts.topProducts = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Units Sold',
+                        data: values,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTopFamilies(data) {
+            const ctx = document.getElementById('topFamiliesChart').getContext('2d');
+            if (charts.topFamilies) charts.topFamilies.destroy();
+
+            if (!data) data = [];
+            const labels = data.map(d => d.family__family_name);
+            const values = data.map(d => d.total_revenue);
+
+            charts.topFamilies = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Revenue (₹)',
+                        data: values,
+                        backgroundColor: '#F59E0B',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { callback: (value) => '₹' + value } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderPaymentMethods(data) {
+            const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+            if (charts.paymentMethod) charts.paymentMethod.destroy();
+
+            if (!data) data = [];
+            const labels = data.map(d => d.payment_method);
+            const values = data.map(d => d.count);
+
+            const bgColors = labels.map(l => {
+                if (l === 'CASH') return '#16a34a';
+                if (l === 'UPI') return '#3B82F6';
+                if (l === 'CARD') return '#F59E0B';
+                return '#94a3b8';
+            });
+
+            charts.paymentMethod = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { usePointStyle: true, boxWidth: 8 }
+                        }
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+
+</html>

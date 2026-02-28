@@ -74,8 +74,8 @@
             </div>
         </div>
 
-        <!-- Navigation Tiles (2x2 grid) -->
-        <div class="nav-tiles">
+        <!-- Navigation Tiles (3x2 grid) -->
+        <div class="nav-tiles" style="grid-template-columns: repeat(2, 1fr);">
             <a href="/pos/" class="nav-tile">
                 <div class="nav-tile-icon pos">
                     <span class="material-symbols-outlined">point_of_sale</span>
@@ -99,6 +99,12 @@
                     <span class="material-symbols-outlined">history</span>
                 </div>
                 <span class="nav-tile-label">Sales History</span>
+            </a>
+            <a href="/analytics/" class="nav-tile">
+                <div class="nav-tile-icon" style="background-color: #E0F2FE; color: #0284C7;">
+                    <span class="material-symbols-outlined">query_stats</span>
+                </div>
+                <span class="nav-tile-label">Analytics</span>
             </a>
         </div>
 
