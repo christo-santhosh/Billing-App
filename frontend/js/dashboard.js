@@ -38,13 +38,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (invoicesList && invoicesList.length > 0) {
             recentBody.innerHTML = invoicesList.slice(0, 5).map(inv => `
                 <tr style="border-bottom: 1px solid var(--border-light);">
-                    <td class="p-sm text-sm text-dark">${formatDate(inv.date)}</td>
-                    <td class="p-sm">
+                    <td class="p-md text-sm text-dark">${formatDate(inv.date)}</td>
+                    <td class="p-md">
                         <p class="text-sm bold text-dark m-0">${inv.family_name}</p>
                         <p class="text-xs text-muted m-0">${inv.head_name}</p>
                     </td>
-                    <td class="p-sm text-sm bold text-dark" style="text-align:right;">${formatCurrency(inv.total_amount)}</td>
-                    <td class="p-sm" style="text-align:right;">
+                    <td class="p-md text-sm bold text-dark" style="text-align:right;">${formatCurrency(inv.total_amount)}</td>
+                    <td class="p-md" style="text-align:right;">
                         <span class="badge ${inv.payment_method === 'CASH' ? 'bg-green text-green' : 'bg-blue text-blue'}">
                             ${inv.payment_method}
                         </span>
