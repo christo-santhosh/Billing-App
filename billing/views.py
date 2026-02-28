@@ -112,8 +112,16 @@ class AnalyticsViewSet(viewsets.ViewSet):
             purchase_count=Count('id')
         ).order_by('-total_revenue')
 
+        formatted_ward_data = []
+        for w in ward_data:
+            formatted_ward_data.append({
+                'ward_name': w['family__ward__ward_name'],
+                'total_revenue': w['total_revenue'],
+                'purchase_count': w['purchase_count']
+            })
+
         return Response({
-            'ward_revenue': list(ward_data),
+            'ward_revenue': formatted_ward_data,
         })
 
     @action(detail=False, methods=['get'])

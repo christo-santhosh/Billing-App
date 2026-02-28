@@ -280,7 +280,7 @@
             if (charts.wardPerformance) charts.wardPerformance.destroy();
 
             if (!data) data = [];
-            const labels = data.map(d => d.family__ward__ward_name);
+            const labels = data.map(d => d.ward_name);
             const values = data.map(d => d.total_revenue);
 
             charts.wardPerformance = new Chart(ctx, {
