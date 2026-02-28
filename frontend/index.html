@@ -102,10 +102,60 @@
             </a>
         </div>
 
+        <!-- Quick Actions & Recent Activity Layout -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 8px;">
+
+            <!-- Quick Actions -->
+            <div class="card p-md">
+                <h3 class="text-lg bold text-dark mb-md">Quick Actions</h3>
+                <div style="display:flex; gap: 12px; flex-wrap: wrap;">
+                    <a href="/pos/" class="btn btn-primary" style="flex:1; min-width: 140px;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">add_circle</span>
+                        New Sale
+                    </a>
+                    <a href="/families/" class="btn btn-primary" style="flex:1; min-width: 140px;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">person_add</span>
+                        Add Member
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Activity Table -->
+            <div class="card p-md">
+                <div class="flex-between mb-md">
+                    <h3 class="text-lg bold text-dark">Recent Activity</h3>
+                    <a href="/sales/" class="btn btn-text" style="width:auto; padding:0;">View All</a>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border-green);">
+                                <th class="text-xs uppercase text-light p-sm" style="padding-bottom:12px;">Date</th>
+                                <th class="text-xs uppercase text-light p-sm" style="padding-bottom:12px;">Family</th>
+                                <th class="text-xs uppercase text-light p-sm"
+                                    style="padding-bottom:12px; text-align:right;">Amount</th>
+                                <th class="text-xs uppercase text-light p-sm"
+                                    style="padding-bottom:12px; text-align:right;">Payment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentTransactionsBody">
+                            <!-- Invoices populated by JS -->
+                            <tr>
+                                <td colspan="4" class="text-center text-muted" style="padding: 24px;">Loading recent
+                                    activity...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
 
 
-        <script src="/static/js/api.js?v=5"></script>
-        <script src="/static/js/dashboard.js?v=5"></script>
+
+        <script src="/static/js/api.js?v=6"></script>
+        <script src="/static/js/dashboard.js?v=6"></script>
 </body>
 
 </html>
