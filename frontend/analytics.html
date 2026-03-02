@@ -16,30 +16,54 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
     <style>
-        /* Adjust Tom Select styling to match Tailwind's look */
+        /* Adjust Tom Select styling to perfectly match the app's native `.select` UI */
+        .ts-wrapper {
+            width: 100%;
+        }
+
         .ts-control {
-            border-color: #d1d5db;
-            /* border-gray-300 */
-            padding: 0.5rem 0.75rem;
-            /* py-2 px-3 */
-            border-radius: 0.375rem;
-            /* rounded-md */
-            min-height: 2.375rem;
-            /* matches input height */
+            background-color: var(--slate-50, #f8fafc);
+            border: 1px solid var(--border-green, #bbf7d0);
+            border-radius: var(--radius-lg, 12px);
+            padding: 0 16px;
             font-size: 0.875rem;
-            /* text-sm */
-            line-height: 1.25rem;
+            color: var(--text-dark, #1e293b);
+            height: 36px;
+            /* Matches the inline height applied to other filters */
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+            transition: all 0.2s;
         }
 
         .ts-control.focus {
-            border-color: #16a34a;
-            /* ring-green-600 */
+            border-color: var(--primary, #16a34a);
             box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+            background-color: var(--white, #ffffff);
+        }
+
+        .ts-dropdown {
+            border-radius: var(--radius-md, 8px);
+            border: 1px solid var(--border-green, #bbf7d0);
+            box-shadow: var(--shadow-md, 0 4px 10px rgba(0, 0, 0, 0.05));
+            font-size: 0.875rem;
+            margin-top: 4px;
+            /* Slight spacing below input */
+        }
+
+        .ts-dropdown .option {
+            padding: 10px 16px;
+        }
+
+        .ts-dropdown .active {
+            background-color: var(--accent, #dcfce7);
+            color: var(--primary-dark, #15803d);
         }
 
         .ts-wrapper.single .ts-control::after {
-            border-color: #6b7280 transparent transparent transparent;
-            /* icon color */
+            border-color: var(--text-muted, #94a3b8) transparent transparent transparent;
+            right: 16px;
         }
     </style>
 </head>
