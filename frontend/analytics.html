@@ -16,40 +16,115 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
     <style>
+        /* Modern Filter Styles matching Premium Dashboard UI */
+        .filter-card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem;
+            border: 1px solid transparent;
+        }
+
+        .filter-reset-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 9999px;
+            background-color: transparent;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .filter-reset-btn:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6B7280;
+            margin-left: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0px;
+        }
+
+        .filter-input {
+            width: 100%;
+            background-color: #F8FAFC;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            padding: 0.625rem 0.75rem;
+            color: #1F2937;
+            outline: none;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            height: 42px;
+            font-family: inherit;
+        }
+
+        .filter-input:focus {
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            border-color: #10B981;
+            background-color: #ffffff;
+        }
+
+        .apply-btn {
+            width: 100%;
+            background-color: #10B981;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .apply-btn:hover {
+            background-color: #059669;
+        }
+
         /* Adjust Tom Select styling to perfectly match the app's native `.select` UI */
         .ts-wrapper {
             width: 100%;
         }
 
         .ts-control {
-            background-color: var(--slate-50, #f8fafc);
-            border: 1px solid var(--border-green, #bbf7d0);
-            border-radius: var(--radius-lg, 12px);
-            padding: 0 16px;
-            font-size: 0.875rem;
-            color: var(--text-dark, #1e293b);
-            height: 36px;
-            /* Matches the inline height applied to other filters */
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
-            transition: all 0.2s;
+            background-color: #F8FAFC !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 0.75rem !important;
+            padding: 0 16px !important;
+            font-size: 0.875rem !important;
+            color: #1F2937 !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            box-shadow: none !important;
+            transition: all 0.2s !important;
         }
 
         .ts-control.focus {
-            border-color: var(--primary, #16a34a);
-            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
-            background-color: var(--white, #ffffff);
+            border-color: #10B981 !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+            background-color: #ffffff !important;
         }
 
         .ts-dropdown {
-            border-radius: var(--radius-md, 8px);
-            border: 1px solid var(--border-green, #bbf7d0);
-            box-shadow: var(--shadow-md, 0 4px 10px rgba(0, 0, 0, 0.05));
+            border-radius: 0.75rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             font-size: 0.875rem;
             margin-top: 4px;
-            /* Slight spacing below input */
         }
 
         .ts-dropdown .option {
@@ -57,13 +132,13 @@
         }
 
         .ts-dropdown .active {
-            background-color: var(--accent, #dcfce7);
-            color: var(--primary-dark, #15803d);
+            background-color: #D1FAE5;
+            color: #064E3B;
         }
 
         .ts-wrapper.single .ts-control::after {
-            border-color: var(--text-muted, #94a3b8) transparent transparent transparent;
-            right: 16px;
+            border-color: #9CA3AF transparent transparent transparent !important;
+            right: 16px !important;
         }
     </style>
 </head>
@@ -86,53 +161,52 @@
     <main class="content-area flex-col gap-lg">
 
         <!-- Header & Filter Form -->
-        <div class="card bg-white p-md">
-            <div class="flex-between mb-md">
+        <div class="filter-card mb-md">
+            <div class="flex-between" style="margin-bottom: 20px;">
                 <div>
-                    <h3 class="text-lg bold text-dark">Data Filters</h3>
-                    <p class="text-xs text-light">Filter insights across sales and wards.</p>
+                    <h2 class="text-xl font-bold" style="color:#1F2937;">Data Filters</h2>
+                    <p class="text-xs mt-1" style="color:#6B7280; margin-top: 4px;">Filter insights across sales and
+                        wards.</p>
                 </div>
-                <button onclick="resetFilters()" class="btn btn-outline"
-                    style="padding: 4px 12px; font-size:12px;">Reset</button>
+                <button type="button" onclick="resetFilters()" class="filter-reset-btn">
+                    Reset
+                </button>
             </div>
 
             <form id="filterForm">
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                     <!-- Date Filter (Start) -->
-                    <div class="form-group mb-0">
-                        <label class="label-sm">Start Date</label>
-                        <input type="date" id="start_date" name="start_date" class="input"
-                            style="height:36px; padding:0 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">START DATE</label>
+                        <input type="date" id="start_date" name="start_date" class="filter-input">
                     </div>
 
                     <!-- Date Filter (End) -->
-                    <div class="form-group mb-0">
-                        <label class="label-sm">End Date</label>
-                        <input type="date" id="end_date" name="end_date" class="input"
-                            style="height:36px; padding:0 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">END DATE</label>
+                        <input type="date" id="end_date" name="end_date" class="filter-input">
                     </div>
 
                     <!-- Ward Filter -->
-                    <div class="form-group mb-0">
-                        <label class="label-sm">Ward</label>
-                        <select id="ward_id" name="ward_id" class="select" style="height:36px; padding:0 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">WARD</label>
+                        <select id="ward_id" name="ward_id" class="filter-input">
                             <option value="">All Wards</option>
                         </select>
                     </div>
 
                     <!-- Family Filter -->
-                    <div class="form-group mb-0">
-                        <label class="label-sm">Family</label>
-                        <select id="family_id" name="family_id" class="select" style="height:36px; padding:0 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">FAMILY</label>
+                        <select id="family_id" name="family_id" class="filter-input">
                             <option value="">All Families</option>
                         </select>
                     </div>
 
                     <!-- Payment Filter -->
-                    <div class="form-group mb-0">
-                        <label class="label-sm">Payment</label>
-                        <select id="payment_method" name="payment_method" class="select"
-                            style="height:36px; padding:0 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px; grid-column: 1 / -1;">
+                        <label class="filter-label">PAYMENT</label>
+                        <select id="payment_method" name="payment_method" class="filter-input">
                             <option value="">All Methods</option>
                             <option value="CASH">Cash</option>
                             <option value="UPI">UPI</option>
@@ -140,6 +214,10 @@
                         </select>
                     </div>
                 </div>
+
+                <button type="button" class="apply-btn" onclick="fetchAnalyticsData()">
+                    <span class="material-symbols-outlined" style="font-size:18px;">filter_alt</span> Apply Filters
+                </button>
             </form>
         </div>
 
