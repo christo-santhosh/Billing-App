@@ -22,30 +22,42 @@ WARDS = [
 ]
 
 FAMILIES = [
-    ("Thomas",  "George Thomas",   "+919876543210"),
-    ("Mathew",  "Raju Mathew",     "+919876543211"),
-    ("John",    "Biju John",       "+919876543212"),
-    ("Philip",  "Saji Philip",     "+919876543213"),
-    ("Paul",    "Tomy Paul",       "+919876543214"),
-    ("Joseph",  "Suresh Joseph",   "+919876543215"),
-    ("Simon",   "Anoop Simon",     "+919876543216"),
-    ("Peter",   "Joji Peter",      "+919876543217"),
-    ("George",  "Vinod George",    "+919876543218"),
-    ("James",   "Shaji James",     "+919876543219"),
-    ("David",   "Reji David",      "+919876543220"),
-    ("Xavier",  "Lijo Xavier",     "+919876543221"),
+    ("Kallivayalil", "Kurian Kallivayalil", "+919876543101"),
+    ("Tharakan",     "Ouseph Tharakan",     "+919876543102"),
+    ("Maliyekkal",   "Chacko Maliyekkal",   "+919876543103"),
+    ("Puthuppally",  "Varkey Puthuppally",  "+919876543104"),
+    ("Kizhakkedath", "Mathai Kizhakkedath", "+919876543105"),
+    ("Palathinkal",  "Itty Palathinkal",    "+919876543106"),
+    ("Vadakkethil",  "Kunjumon Vadakkethil","+919876543107"),
+    ("Pazhoor",      "Thomachan Pazhoor",   "+919876543108"),
+    ("Chempakassery","Antony Chempakassery","+919876543109"),
+    ("Kunnumpurathu","Jose Kunnumpurathu",  "+919876543110"),
+    ("Manappuram",   "Babu Manappuram",     "+919876543111"),
+    ("Thekkekkara",  "Sunny Thekkekkara",   "+919876543112"),
+    ("Kodiyanthara", "Joy Kodiyanthara",    "+919876543113"),
+    ("Vellapally",   "Tomy Vellapally",     "+919876543114"),
+    ("Kanjirappally","Roy Kanjirappally",   "+919876543115"),
 ]
 
 PRODUCTS = [
-    ("Candles (Pack)", 50.00,  5000, "pack"),
-    ("Rice (kg)",      35.00,  5000, "kg"),
-    ("Oil (ltr)",     120.00,  5000, "ltr"),
-    ("Incense Sticks", 20.00,  5000, "pack"),
-    ("Coconut",        25.00,  5000, "pcs"),
-    ("Flowers (kg)",   80.00,  5000, "kg"),
-    ("Bread (loaf)",   45.00,  5000, "loaf"),
-    ("Sugar (kg)",     42.00,  5000, "kg"),
+    ("Chilli Powder (1kg)",   250.00, 1000, "pkt"),
+    ("Black Pepper (500g)",   320.00, 1000, "pkt"),
+    ("Turmeric Powder (250g)", 85.00, 1000, "pkt"),
+    ("Coffee Powder (500g)",  220.00, 1000, "pkt"),
+    ("Tea Dust (1kg)",        280.00, 1000, "pkt"),
+    ("Cardamom (100g)",       180.00, 1000, "pkt"),
+    ("Coriander Powder (500g)",90.00, 1000, "pkt"),
+    ("Cumin Seeds (250g)",    110.00, 1000, "pkt"),
+    ("Mustard Seeds (500g)",   60.00, 1000, "pkt"),
+    ("Fenugreek (250g)",       55.00, 1000, "pkt"),
 ]
+
+print("Wiping existing database records... this may take a moment.")
+InvoiceItem.objects.all().delete()
+Invoice.objects.all().delete()
+Product.objects.all().delete()
+Family.objects.all().delete()
+Ward.objects.all().delete()
 
 print("Seeding database...")
 
@@ -60,20 +72,16 @@ with transaction.atomic():
     # Products
     products = []
     for name, price, stock, unit in PRODUCTS:
-        p, created = Product.objects.get_or_create(
-            name=name, defaults={"price": price, "stock_quantity": stock, "unit": unit}
-        )
-        if not created:
-            Product.objects.filter(pk=p.pk).update(stock_quantity=stock)
+        p = Product.objects.create(name=name, price=price, stock_quantity=stock, unit=unit)
         products.append(p)
     print(f"  Products: {len(products)}")
+
 
     # Families
     families = []
     for i, (fname, head, phone) in enumerate(FAMILIES):
-        f, _ = Family.objects.get_or_create(
-            family_name=fname,
-            defaults={"head_name": head, "phone_number": phone, "ward": wards[i % len(wards)]}
+        f = Family.objects.create(
+            family_name=fname, head_name=head, phone_number=phone, ward=wards[i % len(wards)]
         )
         families.append(f)
     print(f"  Families: {len(families)}")
