@@ -58,6 +58,8 @@ body {
     background: var(--bg-page);
     color: var(--text-dark);
     -webkit-font-smoothing: antialiased;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
 a {
@@ -270,8 +272,10 @@ ul {
 .content-area {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
     min-height: 0;
+    min-width: 0;
 }
 
 .content-area-lg {
@@ -626,7 +630,13 @@ ul {
 .stats-grid .stat-card {
     scroll-snap-align: center;
     flex-shrink: 0;
-    width: 85vw;
+    width: 85%;
+}
+
+.nav-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
 }
 
 .product-grid {
@@ -2366,4 +2376,133 @@ ul {
 
 .mobile-only {
     display: block;
+}
+
+/* --- Mobile Specific Overrides (< 480px) --- */
+@media (max-width: 480px) {
+    :root {
+        /* Reduce overall base size slightly */
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-xl: 12px;
+    }
+
+    /* Reduce paddings */
+    .p-sm {
+        padding: 6px;
+    }
+
+    .p-md {
+        padding: 12px;
+    }
+
+    .p-lg {
+        padding: 16px;
+    }
+
+    /* Shrink text */
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .text-xs {
+        font-size: 0.7rem;
+    }
+
+    .text-sm {
+        font-size: 0.8rem;
+    }
+
+    p {
+        font-size: 0.9rem;
+    }
+
+    /* Shrink the top bar */
+    .dash-topbar {
+        padding: 12px 16px;
+    }
+
+    .dash-title {
+        font-size: 1.2rem;
+    }
+
+    /* Shrink grid gaps */
+    .grid-2 {
+        gap: 8px;
+    }
+
+    .grid-3 {
+        gap: 10px;
+    }
+
+    /* Fix Swipable stats grid for small screens */
+    .stats-grid {
+        gap: 12px;
+        margin: 0 -12px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .stats-grid .stat-card {
+        width: 85%;
+        padding: 16px;
+    }
+
+    /* Shrink stat card content */
+    .stat-label {
+        font-size: 0.8rem;
+        margin-top: 8px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+    }
+
+    .stat-icon-box {
+        width: 32px;
+        height: 32px;
+    }
+
+    .stat-icon-box .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    /* Shrink tiles */
+    .nav-tile {
+        padding: 12px;
+    }
+
+    .nav-tile-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .nav-tile-icon .material-symbols-outlined {
+        font-size: 20px;
+    }
+
+    .nav-tile-label {
+        font-size: 0.8rem;
+    }
+
+    .nav-tiles {
+        gap: 8px !important;
+    }
+
+    /* Adjust Recent Activity */
+    .table-responsive-wrapper th,
+    .table-responsive-wrapper td {
+        padding: 8px !important;
+        font-size: 0.8rem;
+    }
 }
