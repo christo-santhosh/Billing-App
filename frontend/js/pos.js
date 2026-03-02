@@ -127,7 +127,7 @@ function renderSearchResults(results) {
                     ${f.family_name.charAt(0).toUpperCase()}
                 </div>
                 <div class="flex-1" style="min-width:0;">
-                    <p class="text-sm bold text-dark truncate">${f.family_name} Family</p>
+                    <p class="text-sm bold text-dark truncate">${f.family_name}</p>
                     <p class="text-xs text-light truncate">Head: ${f.head_name} | ${f.phone_number}</p>
                 </div>
             `;

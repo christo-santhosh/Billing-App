@@ -138,7 +138,7 @@ function renderFamilies() {
                             ${initial}
                         </div>
                         <div>
-                            <p class="family-name">The ${f.family_name} Family</p>
+                            <p class="family-name">${f.family_name}</p>
                             <p class="family-meta">Head: ${f.head_name} | ${f.phone_number}</p>
                         </div>
                     </div>

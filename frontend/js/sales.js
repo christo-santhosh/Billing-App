@@ -152,7 +152,7 @@ function renderGrouped(invoices) {
                 <!-- Info -->
                 <div class="flex-1" style="min-width:0;">
                     <div class="flex-row gap-sm mb-sm">
-                        <p class="bold text-dark text-sm truncate">The ${inv.family_name} Family</p>
+                        <p class="bold text-dark text-sm truncate">${inv.family_name}</p>
                         ${payBadge}
                     </div>
                     <p class="text-xs text-light truncate">
