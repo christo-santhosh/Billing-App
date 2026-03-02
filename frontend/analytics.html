@@ -190,17 +190,13 @@
                     <!-- Ward Filter -->
                     <div style="display:flex; flex-direction:column; gap:6px;">
                         <label class="filter-label">WARD</label>
-                        <select id="ward_id" name="ward_id" class="filter-input">
-                            <option value="">All Wards</option>
-                        </select>
+                        <select id="ward_id" name="ward_id"></select>
                     </div>
 
                     <!-- Family Filter -->
                     <div style="display:flex; flex-direction:column; gap:6px;">
                         <label class="filter-label">FAMILY</label>
-                        <select id="family_id" name="family_id" class="filter-input">
-                            <option value="">All Families</option>
-                        </select>
+                        <select id="family_id" name="family_id"></select>
                     </div>
 
                     <!-- Payment Filter -->
@@ -338,13 +334,10 @@
                     create: false,
                     allowEmptyOption: true,
                     placeholder: "All Wards",
-                    options: [
-                        { value: '', text: 'All Wards' },
-                        ...wardData.map(w => ({
-                            value: w.id,
-                            text: `${w.ward_name} (${w.ward_number})`
-                        }))
-                    ],
+                    options: wardData.map(w => ({
+                        value: w.id,
+                        text: `${w.ward_name} (${w.ward_number})`
+                    })),
                     searchField: ['text'],
                     maxOptions: 500,
                 });
@@ -354,13 +347,10 @@
                     create: false,
                     allowEmptyOption: true,
                     placeholder: "All Families",
-                    options: [
-                        { value: '', text: 'All Families' },
-                        ...familyData.map(f => ({
-                            value: f.id,
-                            text: f.family_name
-                        }))
-                    ],
+                    options: familyData.map(f => ({
+                        value: f.id,
+                        text: f.family_name
+                    })),
                     searchField: ['text'],
                     maxOptions: 1000,
                 });
