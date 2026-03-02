@@ -12,7 +12,8 @@
                 <p class="text-sm text-gray-500 mt-1">Insights across sales, wards, and products.</p>
             </div>
             <div class="mt-4 md:mt-0 flex space-x-2">
-                <button onclick="resetFilters()" class="text-sm px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                <button onclick="resetFilters()"
+                    class="text-sm px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
                     Reset Filters
                 </button>
             </div>
@@ -22,19 +23,22 @@
             <!-- Date Filter (Start) -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input type="date" id="start_date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                <input type="date" id="start_date" name="start_date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
             </div>
-            
+
             <!-- Date Filter (End) -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input type="date" id="end_date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                <input type="date" id="end_date" name="end_date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
             </div>
 
             <!-- Ward Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Ward</label>
-                <select id="ward_id" name="ward_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                <select id="ward_id" name="ward_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                     <option value="">All Wards</option>
                     <!-- Populated via JS -->
                 </select>
@@ -43,7 +47,8 @@
             <!-- Family Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Family</label>
-                <select id="family_id" name="family_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                <select id="family_id" name="family_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                     <option value="">All Families</option>
                     <!-- Populated via JS -->
                 </select>
@@ -52,7 +57,8 @@
             <!-- Payment Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                <select id="payment_method" name="payment_method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                <select id="payment_method" name="payment_method"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                     <option value="">All Methods</option>
                     <option value="CASH">Cash</option>
                     <option value="UPI">UPI</option>
@@ -64,7 +70,7 @@
 
     <!-- Charts Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         <!-- 1. Revenue & Sales Trend -->
         <div class="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Revenue Trend</h2>
@@ -111,6 +117,38 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- Tom Select -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+<style>
+    /* Adjust Tom Select styling to match Tailwind's look */
+    .ts-control {
+        border-color: #d1d5db;
+        /* border-gray-300 */
+        padding: 0.5rem 0.75rem;
+        /* py-2 px-3 */
+        border-radius: 0.375rem;
+        /* rounded-md */
+        min-height: 2.375rem;
+        /* matches input height */
+        font-size: 0.875rem;
+        /* text-sm */
+        line-height: 1.25rem;
+    }
+
+    .ts-control.focus {
+        border-color: #10B981;
+        /* ring-green-500 */
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    .ts-wrapper.single .ts-control::after {
+        border-color: #6b7280 transparent transparent transparent;
+        /* icon color */
+    }
+</style>
+
 <script>
     // Global Chart instances to destroy/recreate on update
     let charts = {
@@ -120,6 +158,9 @@
         topFamilies: null,
         paymentMethod: null
     };
+
+    let wardSelectInstance = null;
+    let familySelectInstance = null;
 
     // Shared Colors to feel premium/agro theme 
     const COLORS = [
@@ -140,6 +181,15 @@
 
     function resetFilters() {
         document.getElementById('filterForm').reset();
+
+        // Reset Tom Select instances implicitly without triggering infinite change loops
+        if (wardSelectInstance) {
+            wardSelectInstance.setValue('', true); // true = silent (no change event)
+        }
+        if (familySelectInstance) {
+            familySelectInstance.setValue('', true); // true = silent (no change event)
+        }
+
         fetchAnalyticsData();
     }
 
@@ -149,6 +199,8 @@
             const wardRes = await fetch('/api/wards/');
             const wardData = await wardRes.json();
             const wardSelect = document.getElementById('ward_id');
+            // Clear existing options except the first "All Wards" option
+            wardSelect.innerHTML = '<option value="">All Wards</option>';
             wardData.forEach(ward => {
                 const opt = document.createElement('option');
                 opt.value = ward.id;
@@ -160,12 +212,36 @@
             const familyRes = await fetch('/api/families/');
             const familyData = await familyRes.json();
             const familySelect = document.getElementById('family_id');
+            // Clear existing options except the first "All Families" option
+            familySelect.innerHTML = '<option value="">All Families</option>';
             familyData.forEach(family => {
                 const opt = document.createElement('option');
                 opt.value = family.id;
                 opt.textContent = family.family_name;
                 familySelect.appendChild(opt);
             });
+
+            // Initialize Tom Select on the populated dropdowns
+            if (!wardSelectInstance) {
+                wardSelectInstance = new TomSelect('#ward_id', {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: "All Wards",
+                });
+            } else {
+                wardSelectInstance.sync();
+            }
+
+            if (!familySelectInstance) {
+                familySelectInstance = new TomSelect('#family_id', {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: "All Families",
+                });
+            } else {
+                familySelectInstance.sync();
+            }
+
         } catch (error) {
             console.error("Failed to load filter dropdowns", error);
         }
@@ -214,8 +290,8 @@
         const ctx = document.getElementById('revenueTrendChart').getContext('2d');
         if (charts.revenueTrend) charts.revenueTrend.destroy();
 
-        if(!data || data.length === 0) {
-           data = []; // Handle empty gracefully
+        if (!data || data.length === 0) {
+            data = []; // Handle empty gracefully
         }
 
         const labels = data.map(d => d.day);
@@ -246,7 +322,7 @@
                 },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { 
+                    y: {
                         beginAtZero: true,
                         grid: { borderDash: [2, 4], color: '#e5e7eb' },
                         ticks: { callback: (value) => '₹' + value }
@@ -281,7 +357,7 @@
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { callback: (value) => '₹' + value }}
+                    y: { beginAtZero: true, ticks: { callback: (value) => '₹' + value } }
                 }
             }
         });
@@ -358,9 +434,9 @@
 
         // Simple color mapping for clarity
         const bgColors = labels.map(l => {
-            if(l === 'CASH') return '#10B981';
-            if(l === 'UPI') return '#3B82F6';
-            if(l === 'CARD') return '#F59E0B';
+            if (l === 'CASH') return '#10B981';
+            if (l === 'UPI') return '#3B82F6';
+            if (l === 'CARD') return '#F59E0B';
             return '#9CA3AF';
         });
 

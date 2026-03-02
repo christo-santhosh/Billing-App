@@ -10,6 +10,38 @@
         rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="/static/css/style.css?v=4">
+
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Adjust Tom Select styling to match Tailwind's look */
+        .ts-control {
+            border-color: #d1d5db;
+            /* border-gray-300 */
+            padding: 0.5rem 0.75rem;
+            /* py-2 px-3 */
+            border-radius: 0.375rem;
+            /* rounded-md */
+            min-height: 2.375rem;
+            /* matches input height */
+            font-size: 0.875rem;
+            /* text-sm */
+            line-height: 1.25rem;
+        }
+
+        .ts-control.focus {
+            border-color: #16a34a;
+            /* ring-green-600 */
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+        }
+
+        .ts-wrapper.single .ts-control::after {
+            border-color: #6b7280 transparent transparent transparent;
+            /* icon color */
+        }
+    </style>
 </head>
 
 <body class="page-col" style="overflow-x: hidden;">
@@ -144,6 +176,9 @@
             paymentMethod: null
         };
 
+        let wardSelectInstance = null;
+        let familySelectInstance = null;
+
         const COLORS = [
             '#16a34a', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
             '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
@@ -153,41 +188,85 @@
             loadDropdowns();
             fetchAnalyticsData();
 
-            // Listen for filter changes
-            const filterForm = document.getElementById('filterForm');
-            filterForm.addEventListener('change', () => {
-                fetchAnalyticsData();
-            });
+            // Listen for filter changes on standard inputs
+            document.getElementById('start_date').addEventListener('change', fetchAnalyticsData);
+            document.getElementById('end_date').addEventListener('change', fetchAnalyticsData);
+            document.getElementById('payment_method').addEventListener('change', fetchAnalyticsData);
         });
 
         function resetFilters() {
             document.getElementById('filterForm').reset();
+
+            // Reset Tom Select instances implicitly without triggering infinite change loops
+            if (wardSelectInstance) {
+                wardSelectInstance.setValue('', true); // true = silent (no change event)
+            }
+            if (familySelectInstance) {
+                familySelectInstance.setValue('', true); // true = silent (no change event)
+            }
+
             fetchAnalyticsData();
         }
 
         async function loadDropdowns() {
             try {
-                // Load Wards
-                const wardRes = await fetch('/api/wards/');
-                const wardData = await wardRes.json();
-                const wardSelect = document.getElementById('ward_id');
-                wardData.forEach(ward => {
-                    const opt = document.createElement('option');
-                    opt.value = ward.id;
-                    opt.textContent = `${ward.ward_name} (${ward.ward_number})`;
-                    wardSelect.appendChild(opt);
+                // Fetch data first
+                const [wardRes, familyRes] = await Promise.all([
+                    fetch('/api/wards/'),
+                    fetch('/api/families/')
+                ]);
+
+                const wardJson = await wardRes.json();
+                const familyJson = await familyRes.json();
+
+                // DRF returns paginated responses: { count: X, next: url, previous: url, results: [...] }
+                const wardData = wardJson.results || wardJson;
+                const familyData = familyJson.results || familyJson;
+
+                // Destroy old instances if exist
+                if (wardSelectInstance) {
+                    wardSelectInstance.destroy();
+                }
+                if (familySelectInstance) {
+                    familySelectInstance.destroy();
+                }
+
+                // Initialize Ward Select
+                wardSelectInstance = new TomSelect('#ward_id', {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: "All Wards",
+                    options: [
+                        { value: '', text: 'All Wards' },
+                        ...wardData.map(w => ({
+                            value: w.id,
+                            text: `${w.ward_name} (${w.ward_number})`
+                        }))
+                    ],
+                    searchField: ['text'],
+                    maxOptions: 500,
                 });
 
-                // Load Families
-                const familyRes = await fetch('/api/families/');
-                const familyData = await familyRes.json();
-                const familySelect = document.getElementById('family_id');
-                familyData.forEach(family => {
-                    const opt = document.createElement('option');
-                    opt.value = family.id;
-                    opt.textContent = family.family_name;
-                    familySelect.appendChild(opt);
+                // Initialize Family Select
+                familySelectInstance = new TomSelect('#family_id', {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: "All Families",
+                    options: [
+                        { value: '', text: 'All Families' },
+                        ...familyData.map(f => ({
+                            value: f.id,
+                            text: f.family_name
+                        }))
+                    ],
+                    searchField: ['text'],
+                    maxOptions: 1000,
                 });
+
+                // Proper change binding
+                wardSelectInstance.on('change', fetchAnalyticsData);
+                familySelectInstance.on('change', fetchAnalyticsData);
+
             } catch (error) {
                 console.error("Failed to load filter dropdowns", error);
             }

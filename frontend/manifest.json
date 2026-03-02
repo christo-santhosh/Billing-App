@@ -1,0 +1,17 @@
+{
+  "name": "Agro Billing App",
+  "short_name": "Agro Billing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#10b981",
+  "description": "Agro Point of Sale and Billing Application",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
