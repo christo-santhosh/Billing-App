@@ -27,11 +27,7 @@
                 </div>
             </div>
             <div class="flex-row gap-lg">
-                <div class="input-wrapper desktop-only">
-                    <span class="material-symbols-outlined input-icon">search</span>
-                    <input id="familySearch" class="input input-with-icon" placeholder="Search families..." type="text"
-                        style="width:256px;" />
-                </div>
+
                 <button onclick="openFamilyModal()" class="btn btn-primary">
                     <span class="material-symbols-outlined" style="font-size:18px;">add</span>
                     Register Family
@@ -82,9 +78,16 @@
 
                 <!-- Right: Families List -->
                 <div class="col-main flex-col gap-md">
-                    <div class="flex-between mb-sm">
-                        <h2 class="text-xl bold text-dark">Registered Families</h2>
-                        <span id="familiesCount" class="count-badge">--</span>
+                    <div class="flex-between mb-sm" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div class="flex-row gap-sm align-center" style="display:flex; align-items:center;">
+                            <h2 class="text-xl bold text-dark">Registered Families</h2>
+                            <span id="familiesCount" class="count-badge">--</span>
+                        </div>
+                        <div class="input-wrapper" style="flex: 1; min-width: 200px; max-width: 320px;">
+                            <span class="material-symbols-outlined input-icon">search</span>
+                            <input id="familySearch" class="input input-with-icon" placeholder="Search families..."
+                                type="text" style="width: 100%;" />
+                        </div>
                     </div>
                     <div id="familiesListContainer" class="flex-col gap-lg">
                         <div class="text-center p-md text-light">Loading families...</div>

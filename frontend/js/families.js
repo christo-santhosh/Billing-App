@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadData() {
     try {
-        await Promise.all([loadWards(), loadFamilies()]);
+        await loadWards();
+        await loadFamilies();
     } catch (e) {
         console.error("Error loading data", e);
     }
