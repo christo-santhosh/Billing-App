@@ -30,9 +30,12 @@ class ProductSerializer(serializers.ModelSerializer):
         return value.strip()
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    unit = serializers.CharField(source='product.unit', read_only=True)
+
     class Meta:
         model = InvoiceItem
-        fields = ['id', 'product', 'quantity', 'price']
+        fields = ['id', 'product', 'product_name', 'unit', 'quantity', 'price']
         read_only_fields = ['price']
 
 class InvoiceSerializer(serializers.ModelSerializer):
