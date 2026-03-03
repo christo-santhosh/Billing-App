@@ -75,8 +75,7 @@ function renderWards() {
                 <span class="text-xs text-light" style="background:var(--slate-100); padding:2px 8px; border-radius:var(--radius-full);">${ward.ward_number}</span>
             </div>
             <div class="ward-meta">
-                <span class="material-symbols-outlined">groups</span>
-                ${wFamilies.length} Families Registered
+
             </div>
         </div>
         `;
