@@ -8,46 +8,107 @@ const invoiceListContainer = document.getElementById('invoiceListContainer');
 const summaryCount = document.getElementById('summaryCount');
 const summaryTotal = document.getElementById('summaryTotal');
 
-const filterAll = document.getElementById('filterAll');
-const filterCash = document.getElementById('filterCash');
-const filterUpi = document.getElementById('filterUpi');
+let wardSelectInstance = null;
+let familySelectInstance = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Filter chip toggle
-    filterAll.addEventListener('click', () => setFilter('ALL'));
-    filterCash.addEventListener('click', () => setFilter('CASH'));
-    filterUpi.addEventListener('click', () => setFilter('UPI'));
-
-    // Search (debounced)
+    // Search (debounced) - now filters locally after fetching
     let searchTimeout;
-    searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => renderFiltered(), 250);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => renderFiltered(), 250);
+        });
+    }
 
+    // Listen for filter changes on standard inputs
+    document.getElementById('start_date').addEventListener('change', loadInvoices);
+    document.getElementById('end_date').addEventListener('change', loadInvoices);
+    document.getElementById('payment_method').addEventListener('change', loadInvoices);
+
+    await loadDropdowns();
     await loadInvoices();
 });
 
-function setFilter(method) {
-    activeFilter = method;
+function resetFilters() {
+    document.getElementById('filterForm').reset();
 
-    // Toggle active class on chips
-    filterAll.classList.toggle('active', method === 'ALL');
-    filterCash.classList.toggle('active', method === 'CASH');
-    filterUpi.classList.toggle('active', method === 'UPI');
+    if (wardSelectInstance) {
+        wardSelectInstance.setValue('', true); // silent
+    }
+    if (familySelectInstance) {
+        familySelectInstance.setValue('', true); // silent
+    }
 
-    // Restore icons inside cash/upi chips
-    filterCash.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">currency_rupee</span> Cash';
-    filterUpi.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">qr_code_scanner</span> UPI';
-
-    renderFiltered();
+    loadInvoices();
 }
 
-async function loadInvoices(searchQuery = '') {
+async function loadDropdowns() {
     try {
+        const [wardRes, familyRes] = await Promise.all([
+            fetchAPI('/wards/'),
+            fetchAPI('/families/')
+        ]);
+
+        if (wardSelectInstance) wardSelectInstance.destroy();
+        if (familySelectInstance) familySelectInstance.destroy();
+
+        wardSelectInstance = new TomSelect('#ward_id', {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: "All Wards",
+            options: wardRes.map(w => ({ value: w.id, text: `${w.ward_name} (${w.ward_number})` })),
+            searchField: ['text'],
+            maxOptions: 500,
+        });
+
+        familySelectInstance = new TomSelect('#family_id', {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: "All Families",
+            options: familyRes.map(f => ({ value: f.id, text: f.family_name })),
+            searchField: ['text'],
+            maxOptions: 1000,
+        });
+
+        wardSelectInstance.on('change', loadInvoices);
+        familySelectInstance.on('change', loadInvoices);
+
+    } catch (error) {
+        console.error("Failed to load filter dropdowns", error);
+    }
+}
+
+function getFilterParams() {
+    const params = new URLSearchParams();
+    const start = document.getElementById('start_date').value;
+    const end = document.getElementById('end_date').value;
+    const wardId = document.getElementById('ward_id').value;
+    const familyId = document.getElementById('family_id').value;
+    const payment = document.getElementById('payment_method').value;
+
+    if (start) params.append('start_date', start);
+    if (end) params.append('end_date', end);
+    if (wardId) params.append('ward_id', wardId);
+    if (familyId) params.append('family_id', familyId);
+    if (payment) params.append('payment_method', payment);
+
+    return params.toString();
+}
+
+async function loadInvoices() {
+    try {
+        invoiceListContainer.innerHTML = '<div class="text-center text-muted" style="padding:64px 0;"><span class="material-symbols-outlined spin text-5xl mb-sm" style="display:block;">sync</span>Loading transactions...</div>';
+
+        const query = getFilterParams();
         let url = '/invoices/';
-        if (searchQuery) url += `?search=${encodeURIComponent(searchQuery)}`;
-        allInvoices = await fetchAPI(`${url}${searchQuery ? '&' : '?'}page_size=500`);
+
+        // Use page_size=500 for a large enough local list to group/search easily frontend
+        let qs = `page_size=500`;
+        if (query) qs += `&${query}`;
+
+        allInvoices = await fetchAPI(`${url}?${qs}`);
+
         renderFiltered();
     } catch (e) {
         invoiceListContainer.innerHTML = `
@@ -59,14 +120,11 @@ async function loadInvoices(searchQuery = '') {
 }
 
 function renderFiltered() {
-    const query = searchInput.value.trim().toLowerCase();
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
     let filtered = allInvoices;
 
-    if (activeFilter !== 'ALL') {
-        filtered = filtered.filter(inv => inv.payment_method === activeFilter);
-    }
-
+    // Local search functionality (since backend query handles ward/family/date/payment)
     if (query) {
         filtered = filtered.filter(inv =>
             inv.family_name?.toLowerCase().includes(query) ||

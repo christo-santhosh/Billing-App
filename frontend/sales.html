@@ -9,6 +9,60 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/style.css?v=8">
+
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Tom Select inline styling adjustments */
+        .ts-wrapper {
+            width: 100%;
+        }
+
+        .ts-control {
+            background-color: #F8FAFC !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 0.75rem !important;
+            padding: 0 16px !important;
+            font-size: 0.875rem !important;
+            color: #1F2937 !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            box-shadow: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .ts-control.focus {
+            border-color: #10B981 !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+            background-color: #ffffff !important;
+        }
+
+        .ts-dropdown {
+            border-radius: 0.75rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+
+        .ts-dropdown .option {
+            padding: 10px 16px;
+        }
+
+        .ts-dropdown .active {
+            background-color: #D1FAE5;
+            color: #064E3B;
+        }
+
+        .ts-wrapper.single .ts-control::after {
+            border-color: #9CA3AF transparent transparent transparent !important;
+            right: 16px !important;
+        }
+    </style>
 </head>
 
 <body class="page-col">
@@ -28,26 +82,76 @@
 
     <main class="main-content">
 
-        <!-- Search + Filters (sticky) -->
-        <div class="filter-section flex-col gap-md">
-            <!-- Search -->
-            <div class="input-wrapper">
-                <span class="material-symbols-outlined input-icon" style="font-size:20px;">search</span>
-                <input id="searchInput" autocomplete="off" class="input input-with-icon"
-                    placeholder="Search by name, phone…" type="text">
-            </div>
-            <!-- Filter Chips -->
-            <div class="chip-row">
-                <button id="filterAll" class="chip active">All</button>
-                <button id="filterCash" class="chip">
-                    <span class="material-symbols-outlined"
-                        style="font-size:14px; vertical-align:middle;">currency_rupee</span> Cash
-                </button>
-                <button id="filterUpi" class="chip">
-                    <span class="material-symbols-outlined"
-                        style="font-size:14px; vertical-align:middle;">qr_code_scanner</span> UPI
+        <!-- Header & Filter Form -->
+        <div class="filter-card mb-md"
+            style="background-color: #ffffff; border-radius: 1.5rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); padding: 1.25rem; border: 1px solid transparent;">
+            <div class="flex-between" style="margin-bottom: 20px;">
+                <div>
+                    <h2 class="text-xl font-bold" style="color:#1F2937;">Filter History</h2>
+                    <p class="text-xs mt-1" style="color:#6B7280; margin-top: 4px;">Find specific transactions.</p>
+                </div>
+                <button type="button" onclick="resetFilters()" class="filter-reset-btn"
+                    style="padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 9999px; background-color: transparent; cursor: pointer;">
+                    Reset
                 </button>
             </div>
+
+            <form id="filterForm">
+                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <!-- Date Filter (Start) -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label"
+                            style="font-size: 0.75rem; font-weight: 600; color: #6B7280; margin-left: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0px;">START
+                            DATE</label>
+                        <input type="date" id="start_date" name="start_date" class="filter-input"
+                            style="width: 100%; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 0.75rem; font-size: 0.875rem; padding: 0.625rem 0.75rem; color: #1F2937; height: 42px;">
+                    </div>
+
+                    <!-- Date Filter (End) -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label"
+                            style="font-size: 0.75rem; font-weight: 600; color: #6B7280; margin-left: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0px;">END
+                            DATE</label>
+                        <input type="date" id="end_date" name="end_date" class="filter-input"
+                            style="width: 100%; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 0.75rem; font-size: 0.875rem; padding: 0.625rem 0.75rem; color: #1F2937; height: 42px;">
+                    </div>
+
+                    <!-- Ward Filter -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label"
+                            style="font-size: 0.75rem; font-weight: 600; color: #6B7280; margin-left: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0px;">WARD</label>
+                        <select id="ward_id" name="ward_id"></select>
+                    </div>
+
+                    <!-- Family Filter -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label"
+                            style="font-size: 0.75rem; font-weight: 600; color: #6B7280; margin-left: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0px;">FAMILY</label>
+                        <select id="family_id" name="family_id"></select>
+                    </div>
+
+                    <!-- Payment Filter -->
+                    <div style="display:flex; flex-direction:column; gap:6px; grid-column: 1 / -1;">
+                        <label class="filter-label"
+                            style="font-size: 0.75rem; font-weight: 600; color: #6B7280; margin-left: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0px;">PAYMENT</label>
+                        <select id="payment_method" name="payment_method" class="filter-input"
+                            style="width: 100%; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 0.75rem; font-size: 0.875rem; padding: 0.625rem 0.75rem; color: #1F2937; height: 42px;">
+                            <option value="">All Methods</option>
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-wrapper" style="margin-top: 16px;">
+                    <span class="material-symbols-outlined input-icon" style="font-size:20px;">search</span>
+                    <input id="searchInput" autocomplete="off" class="input input-with-icon"
+                        placeholder="Search by invoice # or name..." type="text"
+                        style="width: 100%; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 0.75rem; font-size: 0.875rem; padding: 0.625rem 0.75rem 0.625rem 2.5rem; color: #1F2937; height: 42px;">
+                </div>
+
+            </form>
         </div>
 
         <!-- Summary Strip -->

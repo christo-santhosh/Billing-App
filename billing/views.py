@@ -30,10 +30,32 @@ class ProductViewSet(viewsets.ModelViewSet):
     # ViewSet allows updating stock and price via PUT/PATCH out of the box.
 
 class InvoiceViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.select_related('family__ward').prefetch_related('items').order_by('-date')
+    queryset = Invoice.objects.all()  # Required for DRF router to determine basename
     serializer_class = InvoiceSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['id', 'family__family_name', 'family__head_name', 'family__phone_number']
+
+    def get_queryset(self):
+        queryset = Invoice.objects.select_related('family__ward').prefetch_related('items').order_by('-date')
+        
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        ward_id = self.request.query_params.get('ward_id')
+        family_id = self.request.query_params.get('family_id')
+        payment_method = self.request.query_params.get('payment_method')
+
+        if start_date:
+            queryset = queryset.filter(date__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__date__lte=end_date)
+        if ward_id:
+            queryset = queryset.filter(family__ward_id=ward_id)
+        if family_id:
+            queryset = queryset.filter(family_id=family_id)
+        if payment_method:
+            queryset = queryset.filter(payment_method=payment_method)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
