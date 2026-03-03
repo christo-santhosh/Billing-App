@@ -138,6 +138,6 @@ async function saveProduct(e) {
         closeModal();
         await loadInventory();
     } catch (err) {
-        alert("Failed to save. Check console.");
+        alert(err.message || "Failed to save. Check console.");
     }
 }

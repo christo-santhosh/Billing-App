@@ -34,7 +34,16 @@ async function fetchAPI(endpoint, options = {}) {
 
         if (!response.ok) {
             console.error('API Error:', data);
-            throw new Error(data.message || 'Something went wrong');
+            let errorMsg = data.message || 'Something went wrong';
+            if (typeof data === 'object' && !data.message) {
+                const firstKey = Object.keys(data)[0];
+                if (firstKey && Array.isArray(data[firstKey])) {
+                    errorMsg = typeof data[firstKey][0] === 'string' ? data[firstKey][0] : JSON.stringify(data[firstKey][0]);
+                } else if (typeof data.detail === 'string') {
+                    errorMsg = data.detail;
+                }
+            }
+            throw new Error(errorMsg);
         }
 
         // DRF paginated responses return { count, next, previous, results }
