@@ -222,6 +222,6 @@ async function saveFamily(e) {
         await loadData();
         alert("Family registered successfully!");
     } catch (err) {
-        alert("Failed to register family.");
+        alert(err.message || "Failed to register family.");
     }
 }

@@ -198,7 +198,7 @@ async function saveFamily(e) {
         selectFamily(newFamily);
 
     } catch (err) {
-        alert("Failed to register family. Please verify details.");
+        alert(err.message || "Failed to register family. Please verify details.");
     } finally {
         btn.innerHTML = 'Register Family';
         btn.disabled = false;

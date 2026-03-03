@@ -16,6 +16,14 @@ class FamilySerializer(serializers.ModelSerializer):
         model = Family
         fields = '__all__'
 
+    def validate_phone_number(self, value):
+        qs = Family.objects.filter(phone_number=value.strip())
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("A family with this phone number already exists.")
+        return value.strip()
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
