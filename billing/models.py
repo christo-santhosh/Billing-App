@@ -27,6 +27,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=20, help_text="e.g., kg, pcs, ltr")
+    image = models.ImageField(upload_to='product_images/', null=True, blank=True)
 
     def __str__(self):
         return self.name

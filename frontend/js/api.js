@@ -9,9 +9,13 @@ async function fetchAPI(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;
 
     const defaultHeaders = {
-        'Content-Type': 'application/json',
         'Accept': 'application/json'
     };
+
+    // If body is NOT FormData, default to application/json
+    if (!(options.body instanceof FormData)) {
+        defaultHeaders['Content-Type'] = 'application/json';
+    }
 
     const config = {
         ...options,

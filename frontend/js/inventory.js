@@ -52,14 +52,23 @@ function renderInventory(itemsToRender = products) {
         const outOfStock = p.stock_quantity <= 0;
         const stockClass = outOfStock ? 'stock-out' : 'stock-ok';
 
+        let iconOrImageHtml = `
+            <div class="inv-icon ${colorClasses[iconIndex]} shrink-0">
+                <span class="material-symbols-outlined">${icons[iconIndex]}</span>
+            </div>
+        `;
+        if (p.image) {
+            iconOrImageHtml = `
+                <img src="${p.image}" class="inv-img shrink-0" alt="${p.name}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+            `;
+        }
+
         const html = `
         <div class="inv-row" style="margin-bottom: 12px;">
             <div class="inv-row-inner flex-row">
                 <div class="inv-col-1 desktop-only text-light text-sm" style="margin-right: 16px;">#${p.id}</div>
                 <div class="inv-col-4 flex-row gap-lg" style="flex: 1; min-width: 0; margin-right: 16px;">
-                    <div class="inv-icon ${colorClasses[iconIndex]} shrink-0">
-                        <span class="material-symbols-outlined">${icons[iconIndex]}</span>
-                    </div>
+                    ${iconOrImageHtml}
                     <div style="flex: 1; min-width: 0;">
                         <h3 class="semibold text-dark truncate">${p.name}</h3>
                         <p class="text-xs text-light mt-sm mobile-only">ID: #${p.id}</p>
@@ -89,6 +98,7 @@ function openAddModal() {
     document.getElementById('productStock').value = '';
     document.getElementById('productUnit').value = '';
     document.getElementById('productPrice').value = '';
+    document.getElementById('productImage').value = '';
     document.getElementById('modalTitle').textContent = 'Add Product';
 
     modal.classList.add('show');
@@ -103,6 +113,7 @@ function editProduct(id) {
     document.getElementById('productStock').value = p.stock_quantity;
     document.getElementById('productUnit').value = p.unit;
     document.getElementById('productPrice').value = p.price;
+    document.getElementById('productImage').value = '';
     document.getElementById('modalTitle').textContent = 'Edit Product';
 
     modal.classList.add('show');
@@ -116,23 +127,27 @@ async function saveProduct(e) {
     e.preventDefault();
 
     const pId = document.getElementById('productId').value;
-    const payload = {
-        name: document.getElementById('productName').value,
-        stock_quantity: document.getElementById('productStock').value,
-        unit: document.getElementById('productUnit').value,
-        price: document.getElementById('productPrice').value
-    };
+    const payload = new FormData();
+    payload.append('name', document.getElementById('productName').value);
+    payload.append('stock_quantity', document.getElementById('productStock').value);
+    payload.append('unit', document.getElementById('productUnit').value);
+    payload.append('price', document.getElementById('productPrice').value);
+
+    const imageInput = document.getElementById('productImage');
+    if (imageInput.files[0]) {
+        payload.append('image', imageInput.files[0]);
+    }
 
     try {
         if (pId) {
             await fetchAPI(`/products/${pId}/`, {
-                method: 'PUT',
-                body: JSON.stringify(payload)
+                method: 'PATCH',
+                body: payload
             });
         } else {
             await fetchAPI(`/products/`, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: payload
             });
         }
         closeModal();

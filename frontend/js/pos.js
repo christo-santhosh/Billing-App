@@ -225,10 +225,19 @@ function renderProducts() {
 
         const iconIndex = p.id % icons.length;
 
-        const html = `
-        <div onclick="addToCart(${p.id})" class="product-card">
+        let iconHtml = `
             <div class="product-icon-box ${colorClasses[iconIndex]}">
                 <span class="material-symbols-outlined">${icons[iconIndex]}</span>
+        `;
+        if (p.image) {
+            iconHtml = `
+            <div class="product-icon-box" style="background-image: url('${p.image}'); background-size: cover; background-position: center; border: 1px solid var(--border-light);">
+            `;
+        }
+
+        const html = `
+        <div onclick="addToCart(${p.id})" class="product-card">
+            ${iconHtml}
                 <button class="product-add-btn">
                     <span class="material-symbols-outlined">add</span>
                 </button>
@@ -299,11 +308,21 @@ function renderCart() {
             const colorClasses = ['icon-green', 'icon-emerald', 'icon-teal', 'icon-lime', 'icon-green-dark', 'icon-slate'];
             const iconIndex = item.product.id % icons.length;
 
-            const html = `
-            <div class="cart-item">
+            let cartIconHtml = `
                 <div class="cart-item-icon ${colorClasses[iconIndex]}">
                     <span class="material-symbols-outlined">${icons[iconIndex]}</span>
                 </div>
+            `;
+            if (item.product.image) {
+                cartIconHtml = `
+                <div class="cart-item-icon" style="background-image: url('${item.product.image}'); background-size: cover; background-position: center; border: 1px solid var(--border-light);">
+                </div>
+                `;
+            }
+
+            const html = `
+            <div class="cart-item">
+                ${cartIconHtml}
                 <div class="flex-1" style="min-width:0;">
                     <div class="cart-item-row">
                         <h4 class="cart-item-name truncate">${item.product.name}</h4>
