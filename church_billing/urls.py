@@ -4,11 +4,13 @@ from django.shortcuts import render
 from django.conf import settings
 from django.conf.urls.static import static
 
+
 def serve_page(template_name):
     """Helper to create a view that renders a frontend HTML template."""
     def view(request):
         return render(request, template_name)
     return view
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,6 +18,8 @@ urlpatterns = [
 
     # Frontend pages — served directly by Django
     path('', serve_page('index.html'), name='dashboard'),
+    path('index.html', serve_page('index.html'), name='dashboard_alt'),
+    path('login.html', serve_page('login.html'), name='login_page'),
     path('pos/', serve_page('pos.html'), name='pos'),
     path('families/', serve_page('families.html'), name='families'),
     path('inventory/', serve_page('inventory.html'), name='inventory'),
@@ -24,4 +28,5 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

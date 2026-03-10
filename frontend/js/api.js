@@ -2,11 +2,29 @@
 // This works on localhost, ngrok, or any production domain automatically.
 const BASE_URL = `${window.location.protocol}//${window.location.host}/api`;
 
+// Helper function to get a cookie by name
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 /**
  * Helper function to handle API calls
  */
 async function fetchAPI(endpoint, options = {}) {
-    const url = `${BASE_URL}${endpoint}`;
+    // If endpoint starts with /api/, use it directly, else prepend BASE_URL
+    const url = endpoint.startsWith('http') ? endpoint : (endpoint.startsWith('/api') ? endpoint : `${BASE_URL}${endpoint}`);
 
     const defaultHeaders = {
         'Accept': 'application/json'
@@ -17,8 +35,19 @@ async function fetchAPI(endpoint, options = {}) {
         defaultHeaders['Content-Type'] = 'application/json';
     }
 
+    // Attach CSRF Token for state-changing methods
+    const method = options.method ? options.method.toUpperCase() : 'GET';
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        const csrfToken = getCookie('csrftoken');
+        if (csrfToken) {
+            defaultHeaders['X-CSRFToken'] = csrfToken;
+        }
+    }
+
     const config = {
         ...options,
+        // Ensure credentials (cookies) are sent with every single request
+        credentials: 'same-origin',
         headers: {
             ...defaultHeaders,
             ...options.headers
@@ -32,6 +61,12 @@ async function fetchAPI(endpoint, options = {}) {
         if (options.isDownload) {
             if (!response.ok) throw new Error('Failed to download file');
             return await response.blob();
+        }
+
+        // If unauthorized or forbidden and we're NOT already trying to login/check session, kick to login
+        if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/')) {
+            window.location.href = '/login.html';
+            throw new Error('Unauthorized');
         }
 
         const data = await response.json();

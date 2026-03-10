@@ -10,6 +10,7 @@ SECRET_KEY = 'django-insecure-replace-this-with-a-real-secret-key-for-developmen
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# In production, replace '*' with ['yourdomain.com', 'your-app.onrender.com']
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -20,11 +21,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Local apps
     'billing.apps.BillingConfig',
 ]
@@ -70,10 +71,10 @@ DATABASES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
 AUTH_USER_MODEL = 'billing.User'
@@ -102,8 +103,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,  # Increased for frontend list views
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 # CORS configuration
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF configuration for session auth
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://your-production-domain.com',  # <--- Add your live web app URL here
+]
+CSRF_COOKIE_HTTPONLY = False  # Allows JS to read the CSRF token from the cookie
+SESSION_COOKIE_HTTPONLY = True  # Keep session cookie secure from JS
+
+# Optional: If you are serving your site over HTTPS in production, uncomment these:
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
