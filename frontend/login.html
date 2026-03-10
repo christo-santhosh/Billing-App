@@ -1,138 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>Login - Billing App</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/css/style.css">
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#16a249",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#112117",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                },
+            },
+        }
+    </script>
     <style>
         body {
-            background-color: var(--bg-page);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-height: max(884px, 100dvh);
+            background-color: transparent; /* Resetting style.css background if any */
+            padding: 0;
+            display: block; /* Overriding previous flex if any */
+        }
+        /* Override style.css margin if needed */
+        .flex.min-h-screen {
             min-height: 100vh;
-            margin: 0;
-            padding: 16px;
-        }
-
-        .login-card {
-            background-color: var(--white);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border-green);
-            text-align: center;
-        }
-
-        .login-logo {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px auto;
-            color: white;
-            font-size: 32px;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-        }
-
-        .login-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 4px;
-        }
-
-        .login-subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-
-        .input-group {
-            text-align: left;
-            margin-bottom: 16px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-light);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .login-btn {
-            width: 100%;
-            margin-top: 16px;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .login-btn:active {
-            transform: scale(0.98);
-        }
-
-        .login-error {
-            color: var(--red-500);
-            background-color: var(--red-100);
-            padding: 10px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            margin-bottom: 16px;
-            display: none;
-            border: 1px solid rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
-<body>
-
-    <div class="login-card fade-in">
-        <div class="login-logo">
-            <span class="material-symbols-outlined" style="font-size: 32px">point_of_sale</span>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased">
+<div class="flex min-h-screen flex-col items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white dark:bg-emerald-950/20 p-8 md:p-12 rounded-xl shadow-sm border border-emerald-100 dark:border-emerald-900/50">
+        <div class="flex flex-col items-center mb-10">
+            <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <span class="material-symbols-outlined !text-4xl">eco</span>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-2">Agro Billing</h1>
+            <div class="h-1 w-12 bg-primary rounded-full mb-6"></div>
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Welcome Back</h2>
+            <p class="mt-2 text-sm text-slate-500 dark:text-emerald-500/70">Sign in to access your billing dashboard</p>
         </div>
-        <h1 class="login-title">Welcome Back</h1>
-        <p class="login-subtitle">Sign in to access your billing dashboard</p>
 
-        <div id="loginError" class="login-error">
+        <div id="loginError" style="display: none;" class="w-full text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 p-3 rounded-lg text-sm mb-6 border border-red-200 dark:border-red-800/50 text-center">
             Invalid username or password.
         </div>
 
-        <form id="loginForm">
-            <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" class="input" required placeholder="Enter your username" autocomplete="username">
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-emerald-100 mb-1.5 ml-1" for="username">Username</label>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                        <span class="material-symbols-outlined !text-xl">person</span>
+                    </div>
+                    <input class="block w-full pl-11 pr-4 py-3.5 bg-background-light dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-all outline-none" id="username" name="username" placeholder="Enter your username" type="text" autocomplete="username" required/>
+                </div>
             </div>
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" class="input" required placeholder="Enter your password" autocomplete="current-password">
+            <div>
+                <div class="flex items-center justify-between mb-1.5 ml-1">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-emerald-100" for="password">Password</label>
+                </div>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                        <span class="material-symbols-outlined !text-xl">lock</span>
+                    </div>
+                    <input class="block w-full pl-11 pr-12 py-3.5 bg-background-light dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-all outline-none" id="password" name="password" placeholder="••••••••" type="password" autocomplete="current-password" required/>
+                    <button class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-primary transition-colors" type="button" onclick="const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password';">
+                        <span class="material-symbols-outlined !text-xl">visibility</span>
+                    </button>
+                </div>
             </div>
-            
-            <button type="submit" class="btn-primary login-btn" id="loginBtn">
-                <span>Sign In</span>
-                <span class="material-symbols-outlined" style="font-size: 18px">arrow_forward</span>
-            </button>
+            <div class="pt-2">
+                <button id="loginBtn" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all active:scale-[0.98]" type="submit">
+                    Sign In
+                </button>
+            </div>
         </form>
     </div>
+    <div class="mt-8 flex items-center space-x-4 opacity-40">
+        <span class="h-px w-8 bg-slate-300 dark:bg-emerald-800"></span>
+        <span class="h-px w-8 bg-slate-300 dark:bg-emerald-800"></span>
+    </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/login.js"></script>
+<!-- Scripts -->
+<script src="/static/js/api.js"></script>
+<script src="/static/js/login.js"></script>
 </body>
 </html>
