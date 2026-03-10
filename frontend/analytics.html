@@ -140,6 +140,19 @@
             border-color: #9CA3AF transparent transparent transparent !important;
             right: 16px !important;
         }
+
+        /* Scrollable single-line text for long names to avoid height increase */
+        .scrollable-text {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        }
+        .scrollable-text::-webkit-scrollbar {
+            display: none; /* Chrome & Safari */
+        }
     </style>
 </head>
 
@@ -277,7 +290,7 @@
 
     <!-- All Products Modal -->
     <div id="allProductsModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
-        <div class="modal-box" style="background: white; width: 90%; max-width: 600px; border-radius: 1rem; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div class="modal-box" style="background: white; width: 95%; max-width: 800px; border-radius: 1rem; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
             <div class="modal-header" style="padding: 1.25rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
                 <h2 class="text-xl font-bold text-dark" style="margin: 0;">All Products Leaderboard</h2>
                 <button onclick="closeAllProductsModal()" style="border: none; background: transparent; cursor: pointer; color: #6B7280;">
@@ -295,7 +308,7 @@
 
     <!-- All Families Modal -->
     <div id="allFamiliesModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
-        <div class="modal-box" style="background: white; width: 90%; max-width: 600px; border-radius: 1rem; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div class="modal-box" style="background: white; width: 95%; max-width: 800px; border-radius: 1rem; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
             <div class="modal-header" style="padding: 1.25rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
                 <h2 class="text-xl font-bold text-dark" style="margin: 0;">All Families Leaderboard</h2>
                 <button onclick="closeAllFamiliesModal()" style="border: none; background: transparent; cursor: pointer; color: #6B7280;">
@@ -684,13 +697,14 @@
                                       : `<span style="font-size:14px; font-weight:600; color:#9CA3AF; width:24px; text-align:center; display:inline-block;">${idx + 1}</span>`;
 
                 html += `
-                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid #E5E7EB; display: flex; align-items: center; gap: 16px;">
-                    ${charRank}
-                    <div class="avatar ${colorClass} shrink-0">
-                        ${initial}
+                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid #E5E7EB; display: flex; align-items: center; gap: 16px; transition: background-color 0.2s;">
+                    <div>
+                        ${charRank}
                     </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <p class="family-name bold text-dark truncate" style="margin: 0 0 4px 0;">${p.product__name}</p>
+                    <div style="flex: 1; min-width: 0; padding-right: 8px;">
+                        <div class="scrollable-text">
+                            <p class="family-name bold text-dark" style="margin: 0 0 4px 0; padding-right: 24px;">${p.product__name}</p>
+                        </div>
                     </div>
                     <div style="text-align: right; flex-shrink: 0;">
                         <div class="bold text-dark">${p.total_quantity} unit${p.total_quantity !== 1 ? 's' : ''}</div>
@@ -767,14 +781,17 @@
                                   : `<span style="font-size:14px; font-weight:600; color:#9CA3AF; width:24px; text-align:center; display:inline-block;">${idx + 1}</span>`;
 
                 html += `
-                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid var(--border-green); display: flex; align-items: center; gap: 16px;">
-                    ${charRank}
-                    <div class="avatar ${colorClass} shrink-0">
-                        ${initial}
+                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid var(--border-green); display: flex; align-items: center; gap: 16px; transition: background-color 0.2s;">
+                    <div>
+                        ${charRank}
                     </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <p class="family-name bold text-dark truncate" style="margin: 0 0 4px 0;">${f.family__family_name}</p>
-                        <p class="family-meta text-sm text-light truncate" style="margin: 0;">Head: ${f.family__head_name || 'N/A'}</p>
+                    <div style="flex: 1; min-width: 0; padding-right: 8px;">
+                        <div class="scrollable-text">
+                            <p class="family-name bold text-dark" style="margin: 0 0 4px 0; padding-right: 24px;">${f.family__family_name}</p>
+                        </div>
+                        <div class="scrollable-text">
+                            <p class="family-meta text-sm text-light" style="margin: 0; padding-right: 24px;">Head: ${f.family__head_name || 'N/A'}</p>
+                        </div>
                     </div>
                     <div style="text-align: right; flex-shrink: 0;">
                         <div class="bold text-dark">${formatCurrencyWithFallback(f.total_revenue)}</div>
