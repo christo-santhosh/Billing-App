@@ -68,6 +68,13 @@
             </div>
         </div>
 
+        <!-- Dots Indicator -->
+        <div class="flex-center mt-sm mb-md gap-sm" id="statsIndicator">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
         <!-- Navigation Tiles (3x2 grid) -->
         <div class="nav-tiles" style="grid-template-columns: repeat(2, 1fr);">
             <a href="/pos/" class="nav-tile">
@@ -94,7 +101,7 @@
                 </div>
                 <span class="nav-tile-label">Sales History</span>
             </a>
-            <a href="/analytics/" class="nav-tile">
+            <a href="/analytics/" class="nav-tile" style="grid-column: 1 / -1; justify-self: center; width: calc(50% - 6px);">
                 <div class="nav-tile-icon" style="background-color: #E0F2FE; color: #0284C7;">
                     <span class="material-symbols-outlined">query_stats</span>
                 </div>

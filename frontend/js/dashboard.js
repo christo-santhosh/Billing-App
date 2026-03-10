@@ -58,4 +58,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Dashboard failed to load:", error);
     }
+    
+    // ── Swiper Dots Logic ──────────────────────────────────────────
+    const statsGrid = document.querySelector('.stats-grid');
+    const dots = document.querySelectorAll('#statsIndicator .dot');
+    
+    if (statsGrid && dots.length > 0) {
+        statsGrid.addEventListener('scroll', () => {
+            // Calculate which card is most visible based on scroll position
+            const scrollLeft = statsGrid.scrollLeft;
+            const cardWidth = statsGrid.clientWidth * 0.85; // matches 85% width in CSS
+            
+            // Adding a small offset (half of gap) so the dot changes right when next card dominates
+            const activeIndex = Math.round(scrollLeft / cardWidth);
+            
+            dots.forEach((dot, index) => {
+                if (index === activeIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        });
+    }
 });
