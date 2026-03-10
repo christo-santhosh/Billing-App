@@ -62,6 +62,9 @@
             border-color: #9CA3AF transparent transparent transparent !important;
             right: 16px !important;
         }
+
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
     </style>
 </head>
 
@@ -83,20 +86,23 @@
     <main class="main-content">
 
         <!-- Header & Filter Form -->
-        <div class="filter-card mb-md"
+        <details class="filter-card mb-md"
             style="background-color: #ffffff; border-radius: 1.5rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); padding: 1.25rem; border: 1px solid transparent;">
-            <div class="flex-between" style="margin-bottom: 20px;">
-                <div>
-                    <h2 class="text-xl font-bold" style="color:#1F2937;">Filter History</h2>
-                    <p class="text-xs mt-1" style="color:#6B7280; margin-top: 4px;">Find specific transactions.</p>
+            <summary class="flex-between" style="cursor: pointer; list-style: none; outline: none; margin-bottom: 0;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="color: #6B7280;">filter_list</span>
+                    <div>
+                        <h2 class="text-xl font-bold" style="color:#1F2937;">Filter History</h2>
+                        <p class="text-xs mt-1" style="color:#6B7280; margin-top: 4px;">Tap to expand and filter specific transactions.</p>
+                    </div>
                 </div>
-                <button type="button" onclick="resetFilters()" class="filter-reset-btn"
-                    style="padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 9999px; background-color: transparent; cursor: pointer;">
+                <button type="button" onclick="event.preventDefault(); resetFilters();" class="filter-reset-btn"
+                    style="padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 9999px; background-color: transparent; cursor: pointer; z-index: 2; position: relative;">
                     Reset
                 </button>
-            </div>
+            </summary>
 
-            <form id="filterForm">
+            <form id="filterForm" style="margin-top: 20px;">
                 <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                     <!-- Date Filter (Start) -->
                     <div style="display:flex; flex-direction:column; gap:6px;">
@@ -152,7 +158,7 @@
                 </div>
 
             </form>
-        </div>
+        </details>
 
         <!-- Summary Strip -->
         <div id="summaryStrip" class="summary-strip">
