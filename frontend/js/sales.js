@@ -190,15 +190,20 @@ function renderGrouped(invoices) {
         dayInvoices.forEach(inv => {
             const initial = inv.family_name ? inv.family_name.charAt(0).toUpperCase() : '?';
             const colorClass = avatarColors[inv.id % avatarColors.length];
-            const isUpi = inv.payment_method === 'UPI';
-
-            const payBadge = isUpi
-                ? `<span class="badge badge-upi">
+            let payBadge;
+            if (inv.payment_method === 'UPI') {
+                payBadge = `<span class="badge badge-upi">
                        <span class="material-symbols-outlined" style="font-size:11px;">qr_code_scanner</span> UPI
-                   </span>`
-                : `<span class="badge badge-cash">
+                   </span>`;
+            } else if (inv.payment_method === 'CARD') {
+                payBadge = `<span class="badge bg-blue text-blue" style="background:#E0F2FE; color:#0284C7;">
+                       <span class="material-symbols-outlined" style="font-size:11px;">credit_card</span> Card
+                   </span>`;
+            } else {
+                payBadge = `<span class="badge badge-cash">
                        <span class="material-symbols-outlined" style="font-size:11px;">currency_rupee</span> Cash
                    </span>`;
+            }
 
             html += `
             <div class="invoice-card" onclick="viewInvoiceDetails(${inv.id})" style="cursor: pointer;">
@@ -304,7 +309,9 @@ async function viewInvoiceDetails(id) {
     // Date & Payment
     const dateObj = new Date(inv.date);
     const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    const payBadge = inv.payment_method === 'UPI' ? '📱 UPI' : '💵 Cash';
+    let payBadge = '💵 Cash';
+    if (inv.payment_method === 'UPI') payBadge = '📱 UPI';
+    else if (inv.payment_method === 'CARD') payBadge = '💳 Card';
     document.getElementById('modalPaymentInfo').textContent = `${dateStr} | ${payBadge}`;
 
     document.getElementById('modalTotalAmount').textContent = formatCurrency(inv.total_amount);
