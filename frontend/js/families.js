@@ -115,8 +115,8 @@ function renderFamilies() {
         const wardName = ward ? ward.ward_name : 'Unknown Ward';
 
         let html = `
-        <details class="family-group" open style="margin-bottom: 16px; background: var(--white); border-radius: var(--radius-xl); border: 1px solid var(--border-green); box-shadow: var(--shadow-sm); overflow: hidden;">
-            <summary class="family-group-header" style="cursor: pointer; list-style: none; outline: none; padding: 16px; border-bottom: 1px solid var(--border-green); background: var(--slate-50); display: flex; justify-content: space-between; align-items: center;">
+        <details class="family-group" style="margin-bottom: 16px; background: var(--white); border-radius: var(--radius-xl); border: 1px solid var(--border-green); box-shadow: var(--shadow-sm); overflow: hidden;">
+            <summary class="family-group-header" style="cursor: pointer; list-style: none; outline: none; padding: 16px; border-bottom: 1px solid var(--border-green); background: var(--slate-50); display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--accent)'" onmouseout="this.style.backgroundColor='var(--slate-50)'">
                 <div class="flex-row gap-sm">
                     <span class="material-symbols-outlined text-light">location_on</span>
                     <h4 class="bold text-dark" style="margin: 0;">${wardName}</h4>
