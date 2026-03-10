@@ -65,12 +65,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (statsGrid && dots.length > 0) {
         statsGrid.addEventListener('scroll', () => {
-            // Calculate which card is most visible based on scroll position
-            const scrollLeft = statsGrid.scrollLeft;
-            const cardWidth = statsGrid.clientWidth * 0.85; // matches 85% width in CSS
+            const maxScrollLeft = statsGrid.scrollWidth - statsGrid.clientWidth;
+            let activeIndex = 0;
             
-            // Adding a small offset (half of gap) so the dot changes right when next card dominates
-            const activeIndex = Math.round(scrollLeft / cardWidth);
+            if (maxScrollLeft > 0) {
+                const scrollFraction = statsGrid.scrollLeft / maxScrollLeft;
+                activeIndex = Math.round(scrollFraction * (dots.length - 1));
+            }
             
             dots.forEach((dot, index) => {
                 if (index === activeIndex) {
