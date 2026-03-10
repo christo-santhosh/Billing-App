@@ -1,6 +1,12 @@
 // auth.js - Include this at the TOP of every protected page (index, inventory, sales, etc.)
 // It will immediately check session status and redirect to login if not authenticated.
-document.addEventListener('DOMContentLoaded', async () => {
+
+// Inject CSS immediately to hide the body until we verify auth
+const style = document.createElement('style');
+style.textContent = 'body { display: none !important; }';
+document.documentElement.appendChild(style);
+
+async function checkAuth() {
     try {
         const response = await fetch('/api/auth/session/', {
             method: 'GET',
@@ -12,12 +18,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (!response.ok) {
-            // Not authenticated -> kick to login
-            window.location.href = '/login.html';
+            // Not authenticated -> kick to login (body stays hidden)
+            window.location.replace('/login.html');
         } else {
             const data = await response.json();
-            // Optional: You could display the username in the top right corner
             console.log("Logged in as:", data.username);
+            
+            // Authentication passed -> Reveal the body!
+            document.documentElement.removeChild(style);
             
             // Expose logout globally so any page can call it
             window.logoutUser = async () => {
@@ -26,9 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
-                            // Add CSRF Token manually here if you want, 
-                            // or rely on api.js. Since logout is standalone here:
-                            'X-CSRFToken': getCookie('csrftoken')
                         },
                         credentials: 'same-origin'
                     });
@@ -39,6 +44,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error("Session check failed, redirecting to login:", error);
-        window.location.href = '/login.html';
+        window.location.replace('/login.html');
     }
-});
+}
+
+// Run immediately, don't wait for DOMContentLoaded
+checkAuth();
