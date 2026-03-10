@@ -168,10 +168,14 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
         # Aggregate by product name
         from django.db.models import F
+        limit_param = request.query_params.get('limit')
         product_data = items.values('product__name').annotate(
             total_quantity=Sum('quantity'),
             total_revenue=Sum(F('quantity') * F('price'))
-        ).order_by('-total_quantity')[:10]  # Top 10
+        ).order_by('-total_quantity')
+
+        if limit_param != 'all':
+            product_data = product_data[:10]
 
         return Response({
             'top_products': list(product_data),
@@ -186,7 +190,7 @@ class AnalyticsViewSet(viewsets.ViewSet):
             total_revenue=Sum('total_amount'),
             purchase_count=Count('id')
         ).order_by('-total_revenue')
-        
+
         if limit_param != 'all':
             family_data = family_data[:10]
 
