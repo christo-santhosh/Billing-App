@@ -247,7 +247,12 @@
 
             <!-- 4. Top Spender Families -->
             <div class="card p-md">
-                <h3 class="text-lg bold text-dark mb-md">Top 10 Families (By Revenue)</h3>
+                <div class="flex-between mb-md">
+                    <h3 class="text-lg bold text-dark">Top 10 Families (By Revenue)</h3>
+                    <button onclick="showAllFamiliesModal()" class="text-primary text-sm bold" style="background: rgba(22, 163, 74, 0.1); padding: 4px 12px; border-radius: 9999px; cursor: pointer; border: none; font-family: inherit;">
+                        View All
+                    </button>
+                </div>
                 <div style="height: 250px; position:relative;">
                     <canvas id="topFamiliesChart"></canvas>
                 </div>
@@ -262,7 +267,26 @@
             </div>
 
         </div>
+        </div>
     </main>
+
+    <!-- All Families Modal -->
+    <div id="allFamiliesModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
+        <div class="modal-box" style="background: white; width: 90%; max-width: 600px; border-radius: 1rem; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div class="modal-header" style="padding: 1.25rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="text-xl font-bold text-dark" style="margin: 0;">All Families Leaderboard</h2>
+                <button onclick="closeAllFamiliesModal()" style="border: none; background: transparent; cursor: pointer; color: #6B7280;">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div style="padding: 1rem; overflow-y: auto; flex: 1;">
+                <div id="allFamiliesList" class="flex-col gap-sm">
+                    <div class="text-center p-md text-light">Loading families data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Global Chart instances
@@ -580,6 +604,90 @@
                     }
                 }
             });
+        }
+
+        function showAllFamiliesModal() {
+            const modal = document.getElementById('allFamiliesModal');
+            modal.style.display = 'flex';
+            // Slight delay for opacity transition to trigger
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+            });
+            
+            // Format existing filters to fetch the full list
+            const query = getFilterParams();
+            const qs = query ? `?limit=all&${query}` : '?limit=all';
+            
+            fetch(`/api/analytics/top_families/${qs}`)
+                .then(r => r.json())
+                .then(data => {
+                    renderAllFamiliesList(data.top_families || []);
+                })
+                .catch(err => {
+                    console.error("Failed fetching all families", err);
+                    document.getElementById('allFamiliesList').innerHTML = '<div class="text-center text-red p-md">Failed to load data.</div>';
+                });
+        }
+
+        function closeAllFamiliesModal() {
+            const modal = document.getElementById('allFamiliesModal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 200); // match CSS transition duration
+        }
+        
+        // Close modal on outside click
+        document.getElementById('allFamiliesModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAllFamiliesModal();
+            }
+        });
+
+        function formatCurrencyWithFallback(value) {
+            if (value === null || value === undefined) return '₹0.00';
+            const num = parseFloat(value);
+            return isNaN(num) ? '₹0.00' : '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function renderAllFamiliesList(families) {
+            const container = document.getElementById('allFamiliesList');
+            if (!families || families.length === 0) {
+                container.innerHTML = '<div class="text-center text-light p-md">No sales data found for any families in this filter range.</div>';
+                return;
+            }
+
+            const avatarColors = ['avatar-green', 'avatar-blue', 'avatar-orange', 'avatar-purple', 'avatar-amber', 'avatar-cyan'];
+
+            let html = '';
+            families.forEach((f, idx) => {
+                const initial = f.family__family_name ? f.family__family_name.charAt(0).toUpperCase() : '?';
+                const colorClass = avatarColors[idx % avatarColors.length];
+                
+                // Top 3 gets special styling
+                const isTop3 = idx < 3;
+                charRank = isTop3 ? `<span style="display:flex; align-items:center; justify-content:center; width:24px; height:24px; background:#FEF3C7; color:#D97706; border-radius:50%; font-size:12px; font-weight:bold;">${idx + 1}</span>` 
+                                  : `<span style="font-size:14px; font-weight:600; color:#9CA3AF; width:24px; text-align:center; display:inline-block;">${idx + 1}</span>`;
+
+                html += `
+                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid var(--border-green); display: flex; align-items: center; gap: 16px;">
+                    ${charRank}
+                    <div class="avatar ${colorClass} shrink-0">
+                        ${initial}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <p class="family-name bold text-dark truncate" style="margin: 0 0 4px 0;">${f.family__family_name}</p>
+                        <p class="family-meta text-sm text-light truncate" style="margin: 0;">Head: ${f.family__head_name || 'N/A'}</p>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0;">
+                        <div class="bold text-dark">${formatCurrencyWithFallback(f.total_revenue)}</div>
+                        <div class="text-xs text-light" style="margin-top:2px;">${f.purchase_count} item${f.purchase_count !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
     </script>

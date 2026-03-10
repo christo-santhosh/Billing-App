@@ -181,10 +181,14 @@ class AnalyticsViewSet(viewsets.ViewSet):
     def top_families(self, request):
         invoices = self._get_filtered_invoices(request)
 
+        limit_param = request.query_params.get('limit')
         family_data = invoices.values('family__family_name', 'family__head_name').annotate(
             total_revenue=Sum('total_amount'),
             purchase_count=Count('id')
-        ).order_by('-total_revenue')[:10]  # Top 10
+        ).order_by('-total_revenue')
+        
+        if limit_param != 'all':
+            family_data = family_data[:10]
 
         return Response({
             'top_families': list(family_data)
