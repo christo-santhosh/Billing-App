@@ -53,6 +53,18 @@
   padding: 0;
 }
 
+details > summary {
+    list-style: none; /* Firefox */
+}
+
+details > summary::-webkit-details-marker {
+    display: none; /* Chrome, Safari */
+}
+
+details[open] summary .material-symbols-outlined:last-child {
+    transform: rotate(180deg);
+}
+
 body {
   font-family: var(--font-main);
   background: var(--bg-page);

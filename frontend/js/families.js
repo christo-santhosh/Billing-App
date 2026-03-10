@@ -115,15 +115,18 @@ function renderFamilies() {
         const wardName = ward ? ward.ward_name : 'Unknown Ward';
 
         let html = `
-        <div class="family-group">
-            <div class="family-group-header">
+        <details class="family-group" open style="margin-bottom: 16px; background: var(--white); border-radius: var(--radius-xl); border: 1px solid var(--border-green); box-shadow: var(--shadow-sm); overflow: hidden;">
+            <summary class="family-group-header" style="cursor: pointer; list-style: none; outline: none; padding: 16px; border-bottom: 1px solid var(--border-green); background: var(--slate-50); display: flex; justify-content: space-between; align-items: center;">
                 <div class="flex-row gap-sm">
                     <span class="material-symbols-outlined text-light">location_on</span>
-                    <h4 class="bold text-dark">${wardName}</h4>
+                    <h4 class="bold text-dark" style="margin: 0;">${wardName}</h4>
                 </div>
-                <span class="text-xs medium text-light uppercase">${wardFamilies.length} Families</span>
-            </div>
-            <div>
+                <div class="flex-row gap-sm" style="align-items: center;">
+                    <span class="text-xs medium text-light uppercase">${wardFamilies.length} Families</span>
+                    <span class="material-symbols-outlined text-muted" style="transition: transform 0.2s;">expand_more</span>
+                </div>
+            </summary>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
         `;
 
         wardFamilies.forEach(f => {
@@ -131,14 +134,14 @@ function renderFamilies() {
             const colorClass = avatarColors[f.id % avatarColors.length];
 
             html += `
-                <div class="family-row">
+                <div class="family-row" style="padding: 12px; border-radius: var(--radius-lg); border: 1px solid var(--border-green); transition: all 0.2s;">
                     <div class="flex-row gap-lg">
                         <div class="avatar ${colorClass}">
                             ${initial}
                         </div>
                         <div>
-                            <p class="family-name">${f.family_name}</p>
-                            <p class="family-meta">Head: ${f.head_name} | ${f.phone_number}</p>
+                            <p class="family-name bold text-dark" style="margin: 0 0 4px 0;">${f.family_name}</p>
+                            <p class="family-meta text-sm text-light" style="margin: 0;">Head: ${f.head_name} | ${f.phone_number}</p>
                         </div>
                     </div>
                 </div>
@@ -147,7 +150,7 @@ function renderFamilies() {
 
         html += `
             </div>
-        </div>
+        </details>
         `;
 
         familiesListContainer.insertAdjacentHTML('beforeend', html);
