@@ -70,7 +70,7 @@ function renderInventory(itemsToRender = products) {
                 <div class="inv-col-4 flex-row gap-lg" style="flex: 1; min-width: 0; margin-right: 16px;">
                     ${iconOrImageHtml}
                     <div style="flex: 1; min-width: 0;">
-                        <h3 class="semibold text-dark truncate">${p.name}</h3>
+                        <h3 class="semibold text-dark" style="word-break: break-word; white-space: normal; font-size: 0.9rem;">${p.name}</h3>
                         <p class="text-xs text-light mt-sm mobile-only">ID: #${p.id}</p>
                     </div>
                 </div>
