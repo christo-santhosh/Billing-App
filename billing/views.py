@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from django.http import FileResponse
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
+from datetime import datetime
 from .models import Ward, Family, Product, Invoice
 from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer
 from .utils import generate_invoice_pdf, generate_whatsapp_link
+from .report_utils import generate_analytics_report_pdf
 
 
 class WardViewSet(viewsets.ModelViewSet):
@@ -210,6 +212,16 @@ class AnalyticsViewSet(viewsets.ViewSet):
         return Response({
             'payment_distribution': list(payment_data)
         })
+
+    @action(detail=False, methods=['get'])
+    def download_report(self, request):
+        invoices = self._get_filtered_invoices(request)
+
+        pdf_buffer = generate_analytics_report_pdf(
+            invoices, request.query_params)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return FileResponse(pdf_buffer, as_attachment=True, filename=f"Analytics_Report_{timestamp}.pdf")
 
 
 @method_decorator(csrf_exempt, name='dispatch')
