@@ -2,13 +2,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import render
 from django.conf import settings
+from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
 
 
-def serve_page(template_name):
+def serve_page(template_name, content_type='text/html'):
     """Helper to create a view that renders a frontend HTML template."""
     def view(request):
-        return render(request, template_name)
+        return render(request, template_name, content_type=content_type)
     return view
 
 
@@ -27,8 +28,9 @@ urlpatterns = [
     path('analytics/', serve_page('analytics.html'), name='analytics'),
     
     # PWA files
-    path('manifest.json', serve_page('manifest.json'), name='manifest'),
-    path('service-worker.js', serve_page('service-worker.js'), name='service_worker'),
+    path('manifest.json', serve_page('manifest.json', content_type='application/manifest+json'), name='manifest'),
+    path('service-worker.js', serve_page('service-worker.js', content_type='application/javascript'), name='service_worker'),
+    path('favicon.ico', RedirectView.as_view(url='/static/icon.png', permanent=False)),
 ]
 
 if settings.DEBUG:

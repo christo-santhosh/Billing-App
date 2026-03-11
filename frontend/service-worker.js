@@ -1,4 +1,4 @@
-const CACHE_NAME = 'billing-app-cache-v2';
+const CACHE_NAME = 'billing-app-cache-v3';
 
 // Assets to cache on install
 const urlsToCache = [
@@ -14,7 +14,7 @@ const urlsToCache = [
     '/static/js/api.js',
     '/static/js/auth.js',
     '/static/js/pwa.js',
-    '/icon.png',
+    '/static/icon.png',
     '/manifest.json'
 ];
 
