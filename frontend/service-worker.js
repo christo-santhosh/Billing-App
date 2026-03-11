@@ -1,4 +1,4 @@
-const CACHE_NAME = 'billing-app-cache-v3';
+const CACHE_NAME = 'billing-app-cache-v4';
 
 // Assets to cache on install
 const urlsToCache = [
@@ -18,13 +18,20 @@ const urlsToCache = [
     '/manifest.json'
 ];
 
-// Install event - cache core assets
+// Install event - cache core assets individually so a 404 doesn't kill the worker
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('Opened cache');
-                return cache.addAll(urlsToCache);
+                // Cache each URL individually to prevent one 404 from causing the whole install to fail
+                return Promise.allSettled(
+                    urlsToCache.map(url => {
+                        return cache.add(url).catch(error => {
+                            console.error('Failed to cache:', url, error);
+                        });
+                    })
+                );
             })
     );
 });
