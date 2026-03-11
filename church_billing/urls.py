@@ -25,6 +25,10 @@ urlpatterns = [
     path('inventory/', serve_page('inventory.html'), name='inventory'),
     path('sales/', serve_page('sales.html'), name='sales'),
     path('analytics/', serve_page('analytics.html'), name='analytics'),
+    
+    # PWA files
+    path('manifest.json', serve_page('manifest.json'), name='manifest'),
+    path('service-worker.js', serve_page('service-worker.js'), name='service_worker'),
 ]
 
 if settings.DEBUG:

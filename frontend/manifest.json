@@ -8,8 +8,8 @@
   "description": "Agro Point of Sale and Billing Application",
   "icons": [
     {
-      "src": "/icon.svg",
-      "type": "image/svg+xml",
+      "src": "/icon.png",
+      "type": "image/png",
       "sizes": "192x192 512x512",
       "purpose": "any maskable"
     }
