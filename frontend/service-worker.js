@@ -1,4 +1,4 @@
-const CACHE_NAME = 'billing-app-cache-v1';
+const CACHE_NAME = 'billing-app-cache-v2';
 
 // Assets to cache on install
 const urlsToCache = [
