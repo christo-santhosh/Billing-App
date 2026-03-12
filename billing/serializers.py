@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Ward, Family, Product, Invoice, InvoiceItem
+from .models import User, Ward, Family, Product, Invoice, InvoiceItem, StoreSettings
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,3 +80,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 
     def get_item_count(self, obj):
         return obj.items.count()
+
+class StoreSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreSettings
+        fields = ['upi_id', 'merchant_name']

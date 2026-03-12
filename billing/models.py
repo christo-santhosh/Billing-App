@@ -69,3 +69,21 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} (Invoice #{self.invoice.id})"
+
+class StoreSettings(models.Model):
+    upi_id = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. store@sbi")
+    merchant_name = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. Store Name")
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        if self.pk is None and StoreSettings.objects.exists():
+            return StoreSettings.objects.first()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def get_settings(cls):
+        settings, created = cls.objects.get_or_create(id=1)
+        return settings
+
+    def __str__(self):
+        return "Store Settings"

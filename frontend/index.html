@@ -24,7 +24,9 @@
             <span class="material-symbols-outlined">church</span>
             Church Portal
         </div>
-
+        <button onclick="openSettingsModal()" style="margin-left:auto; background:transparent; border:none; cursor:pointer;" class="flex-center">
+            <span class="material-symbols-outlined text-dark">settings</span>
+        </button>
     </header>
 
     <main class="content-area flex-col gap-lg">
@@ -163,7 +165,37 @@
 
         </div>
 
-
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">Store Settings</h2>
+                    <button onclick="closeSettingsModal()" class="modal-close">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <form id="settingsForm" class="flex-col gap-md">
+                    <div>
+                        <label class="label">Merchant UPI ID</label>
+                        <div class="input-wrapper">
+                            <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">qr_code</span>
+                            <input id="upiIdInput" class="input input-with-icon" placeholder="e.g. store@sbi" type="text" />
+                        </div>
+                        <p class="text-xs text-muted mt-xs">Used for generating dynamic QR codes during POS billing.</p>
+                    </div>
+                    <div>
+                        <label class="label">Merchant Name</label>
+                        <div class="input-wrapper">
+                            <span class="material-symbols-outlined input-icon" style="top:22px;transform:none;">store</span>
+                            <input id="merchantNameInput" class="input input-with-icon" placeholder="e.g. My Store" type="text" />
+                        </div>
+                    </div>
+                    <button id="saveSettingsBtn" type="submit" class="btn btn-primary-lg mt-lg">
+                        Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <script src="/static/js/auth.js"></script>
         <script src="/static/js/api.js?v=9"></script>

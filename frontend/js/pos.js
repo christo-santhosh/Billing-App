@@ -3,6 +3,7 @@ let products = [];
 let cart = [];
 let families = [];
 let wards = [];
+let storeSettings = { upi_id: '', merchant_name: '' };
 
 // DOM Elements
 const productGrid = document.getElementById('productGrid');
@@ -62,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     payMethodCash.addEventListener('click', () => setPaymentMethod('CASH'));
     payMethodUpi.addEventListener('click', () => setPaymentMethod('UPI'));
 
-    await Promise.all([loadProducts(), loadWards()]);
+    await Promise.all([loadProducts(), loadWards(), loadSettings()]);
     renderCart(); // init empty state
 
     // Setup Search debounce
@@ -90,6 +91,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+async function loadSettings() {
+    try {
+        storeSettings = await fetchAPI('/settings/');
+    } catch (e) {
+        console.error("Failed to load settings:", e);
+    }
+}
 
 async function loadWards() {
     try {
@@ -395,6 +404,51 @@ async function completeTransaction() {
         // Show Success Modal
         const methodLabel = paymentMethod === 'UPI' ? '📲 UPI' : '💵 Cash';
         document.getElementById('successInvoiceText').textContent = `Transaction #${response.id} recorded. Paid by ${methodLabel}.`;
+        
+        // Refresh settings just in case it was updated in another tab
+        await loadSettings();
+
+        // UI Elements for two-step success modal
+        const upiPendingState = document.getElementById('upiPendingState');
+        const finalSuccessState = document.getElementById('finalSuccessState');
+        
+        // Defensive: remove 'hidden' class if it stuck around from old HTML caching
+        upiPendingState.classList.remove('hidden');
+        finalSuccessState.classList.remove('hidden');
+
+        if (paymentMethod === 'UPI') {
+            finalSuccessState.style.display = 'none';
+            upiPendingState.style.display = 'flex';
+            
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+
+            if (storeSettings && storeSettings.upi_id) {
+                const upiString = `upi://pay?pa=${storeSettings.upi_id}&pn=${encodeURIComponent(storeSettings.merchant_name || 'Store')}&am=${response.total_amount}&cu=INR`;
+                
+                try {
+                    new QRCode(qrcodeDiv, {
+                        text: upiString,
+                        width: 220,
+                        height: 220,
+                        colorDark : "#111827",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                    document.getElementById('upiAmountText').innerHTML = `Amount to Pay: <span class="text-primary">₹${response.total_amount}</span>`;
+                } catch (err) {
+                    console.error("QR Code Error:", err);
+                    document.getElementById('upiAmountText').innerHTML = `<span class="text-red">QR Generation Failed</span>`;
+                }
+            } else {
+                document.getElementById('upiAmountText').innerHTML = `<span class="text-red text-sm">⚠️ Merchant UPI ID not configured.<br>Please set it in Dashboard Settings.</span>`;
+            }
+        } else {
+            // Cash goes straight to final success
+            upiPendingState.style.display = 'none';
+            finalSuccessState.style.display = 'flex';
+        }
+
         successModal.classList.add('show');
 
         // Refresh products stock locally
@@ -439,6 +493,12 @@ async function downloadCurrentPdf() {
 function closeSuccessModal() {
     successModal.classList.remove('show');
     startNewTransaction();
+}
+
+// Called when cashier verifies payment is received
+function confirmUpiPayment() {
+    document.getElementById('upiPendingState').style.display = 'none';
+    document.getElementById('finalSuccessState').style.display = 'flex';
 }
 
 window.startNewTransaction = function () {

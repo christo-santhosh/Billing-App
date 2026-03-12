@@ -10,8 +10,8 @@ from django.http import FileResponse
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from datetime import datetime
-from .models import Ward, Family, Product, Invoice
-from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer
+from .models import Ward, Family, Product, Invoice, StoreSettings
+from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, StoreSettingsSerializer
 from .utils import generate_invoice_pdf, generate_whatsapp_link
 from .report_utils import generate_analytics_report_pdf
 
@@ -260,3 +260,18 @@ class CheckSessionView(APIView):
                 "username": request.user.username
             })
         return Response({"isAuthenticated": False}, status=401)
+
+
+class StoreSettingsView(APIView):
+    def get(self, request):
+        settings = StoreSettings.get_settings()
+        serializer = StoreSettingsSerializer(settings)
+        return Response(serializer.data)
+
+    def put(self, request):
+        settings = StoreSettings.get_settings()
+        serializer = StoreSettingsSerializer(settings, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)

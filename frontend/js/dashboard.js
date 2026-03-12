@@ -82,4 +82,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
     }
+
+    // ── Settings Modal Logic ────────────────────────────────────────
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsForm = document.getElementById('settingsForm');
+
+    window.openSettingsModal = async function() {
+        if (settingsModal) settingsModal.classList.add('show');
+        try {
+            const settings = await fetchAPI('/settings/');
+            document.getElementById('upiIdInput').value = settings.upi_id || '';
+            document.getElementById('merchantNameInput').value = settings.merchant_name || '';
+        } catch (e) {
+            console.error("Failed to load settings:", e);
+        }
+    }
+
+    window.closeSettingsModal = function() {
+        if (settingsModal) settingsModal.classList.remove('show');
+    }
+
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveSettingsBtn');
+            const upi_id = document.getElementById('upiIdInput').value;
+            const merchant_name = document.getElementById('merchantNameInput').value;
+
+            try {
+                btn.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Saving...';
+                btn.disabled = true;
+
+                await fetchAPI('/settings/', {
+                    method: 'PUT',
+                    body: JSON.stringify({ upi_id, merchant_name })
+                });
+
+                closeSettingsModal();
+                alert("Settings saved successfully!"); // Optional success feedback
+            } catch (err) {
+                alert(err.message || "Failed to save settings.");
+            } finally {
+                btn.innerHTML = 'Save Settings';
+                btn.disabled = false;
+            }
+        });
+    }
 });
