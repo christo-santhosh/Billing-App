@@ -2134,7 +2134,7 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px 16px;
   background: var(--white);
   border-bottom: 1px solid var(--border-green);
   box-shadow: var(--shadow-sm);
@@ -2196,7 +2196,7 @@ ul {
   }
 
   .dash-topbar {
-    padding: 16px 32px;
+    padding: max(16px, env(safe-area-inset-top)) 32px 16px 32px;
   }
 }
 
@@ -2486,7 +2486,7 @@ ul {
 
   /* Shrink the top bar */
   .dash-topbar {
-    padding: 12px 16px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px 16px;
   }
 
   .dash-title {
