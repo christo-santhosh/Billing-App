@@ -1,4 +1,5 @@
-const CACHE_NAME = 'billing-app-cache-v8';
+// pwa.js
+const CACHE_NAME = 'billing-app-cache-v10'; // Bumped version again
 
 // Assets to cache on install
 const urlsToCache = [
@@ -20,6 +21,9 @@ const urlsToCache = [
 
 // Install event - cache core assets individually so a 404 doesn't kill the worker
 self.addEventListener('install', event => {
+    // Force the waiting service worker to become the active service worker
+    self.skipWaiting();
+    
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
@@ -87,6 +91,9 @@ self.addEventListener('fetch', event => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
+    // Tell the active service worker to take control of the page immediately
+    event.waitUntil(self.clients.claim());
+    
     const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
         caches.keys().then(cacheNames => {
