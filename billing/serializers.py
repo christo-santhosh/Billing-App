@@ -17,12 +17,18 @@ class FamilySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate_phone_number(self, value):
-        qs = Family.objects.filter(phone_number=value.strip())
+        import re
+        cleaned = value.strip()
+        if not re.match(r'^\+?\d{10,15}$', cleaned):
+            raise serializers.ValidationError(
+                "Phone number must be 10-15 digits, optionally starting with '+'. Example: +919876543210"
+            )
+        qs = Family.objects.filter(phone_number=cleaned)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
             raise serializers.ValidationError("A family with this phone number already exists.")
-        return value.strip()
+        return cleaned
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:

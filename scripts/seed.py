@@ -1,6 +1,6 @@
 """
 Quick standalone seed script — run from the project root:
-    venv\Scripts\python.exe seed.py
+    python scripts/seed.py
 """
 import os
 import django
@@ -8,6 +8,11 @@ import random
 from datetime import timedelta
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "church_billing.settings")
+
+# Add the project root to sys.path so Django can find the settings module
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 django.setup()
 
 from django.utils import timezone

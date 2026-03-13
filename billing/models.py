@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
+
+# Validates phone numbers: optional '+' followed by 10-15 digits (e.g., +919876543210 or 9876543210)
+phone_regex = RegexValidator(
+    regex=r'^\+?\d{10,15}$',
+    message="Phone number must be 10-15 digits, optionally starting with '+'. Example: +919876543210"
+)
+
 
 class User(AbstractUser):
     is_sub_admin = models.BooleanField(default=False)
@@ -16,7 +24,7 @@ class Ward(models.Model):
 class Family(models.Model):
     family_name = models.CharField(max_length=100)
     head_name = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20, validators=[phone_regex])
     ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name='families')
 
     def __str__(self):

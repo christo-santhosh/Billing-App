@@ -1,8 +1,14 @@
+"""
+Quick admin user setup script — run from the project root:
+    python scripts/setup_admin.py
+"""
 from django.contrib.auth import get_user_model
 import os
+import sys
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'church_billing.settings')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 django.setup()
 
 
