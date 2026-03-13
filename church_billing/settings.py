@@ -116,11 +116,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF configuration for session auth
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'https://your-production-domain.com',  # <--- Add your live web app URL here
-]
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:8000,http://127.0.0.1:8000',
+    cast=Csv()
+)
 CSRF_COOKIE_HTTPONLY = False  # Allows JS to read the CSRF token from the cookie
 SESSION_COOKIE_HTTPONLY = True  # Keep session cookie secure from JS
 
