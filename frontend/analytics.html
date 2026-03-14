@@ -232,7 +232,7 @@
                     </div>
 
                     <!-- Payment Filter -->
-                    <div style="display:flex; flex-direction:column; gap:6px; grid-column: 1 / -1;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
                         <label class="filter-label">PAYMENT</label>
                         <select id="payment_method" name="payment_method" class="filter-input">
                             <option value="">All Methods</option>
@@ -240,6 +240,24 @@
                             <option value="UPI">UPI</option>
                             <option value="CARD">Card</option>
                         </select>
+                    </div>
+
+                    <!-- Product Filter -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">PRODUCT</label>
+                        <select id="product_id" name="product_id"></select>
+                    </div>
+
+                    <!-- Min Amount -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">MIN AMOUNT (₹)</label>
+                        <input type="number" id="min_amount" name="min_amount" class="filter-input" placeholder="0.00" min="0" step="0.01">
+                    </div>
+
+                    <!-- Max Amount -->
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label class="filter-label">MAX AMOUNT (₹)</label>
+                        <input type="number" id="max_amount" name="max_amount" class="filter-input" placeholder="No limit" min="0" step="0.01">
                     </div>
                 </div>
 
@@ -384,6 +402,7 @@
 
         let wardSelectInstance = null;
         let familySelectInstance = null;
+        let productSelectInstance = null;
 
         const COLORS = [
             '#16a34a', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -398,6 +417,8 @@
             document.getElementById('start_date').addEventListener('change', fetchAnalyticsData);
             document.getElementById('end_date').addEventListener('change', fetchAnalyticsData);
             document.getElementById('payment_method').addEventListener('change', fetchAnalyticsData);
+            document.getElementById('min_amount').addEventListener('change', fetchAnalyticsData);
+            document.getElementById('max_amount').addEventListener('change', fetchAnalyticsData);
         });
 
         function resetFilters() {
@@ -405,11 +426,16 @@
 
             // Reset Tom Select instances implicitly without triggering infinite change loops
             if (wardSelectInstance) {
-                wardSelectInstance.setValue('', true); // true = silent (no change event)
+                wardSelectInstance.setValue('', true);
             }
             if (familySelectInstance) {
-                familySelectInstance.setValue('', true); // true = silent (no change event)
+                familySelectInstance.setValue('', true);
             }
+            if (productSelectInstance) {
+                productSelectInstance.setValue('', true);
+            }
+            document.getElementById('min_amount').value = '';
+            document.getElementById('max_amount').value = '';
 
             fetchAnalyticsData();
         }
@@ -417,17 +443,20 @@
         async function loadDropdowns() {
             try {
                 // Fetch data first
-                const [wardRes, familyRes] = await Promise.all([
+                const [wardRes, familyRes, productRes] = await Promise.all([
                     fetch('/api/wards/'),
-                    fetch('/api/families/')
+                    fetch('/api/families/'),
+                    fetch('/api/products/')
                 ]);
 
                 const wardJson = await wardRes.json();
                 const familyJson = await familyRes.json();
+                const productJson = await productRes.json();
 
                 // DRF returns paginated responses: { count: X, next: url, previous: url, results: [...] }
                 const wardData = wardJson.results || wardJson;
                 const familyData = familyJson.results || familyJson;
+                const productData = productJson.results || productJson;
 
                 // Destroy old instances if exist
                 if (wardSelectInstance) {
@@ -435,6 +464,9 @@
                 }
                 if (familySelectInstance) {
                     familySelectInstance.destroy();
+                }
+                if (productSelectInstance) {
+                    productSelectInstance.destroy();
                 }
 
                 // Initialize Ward Select
@@ -463,9 +495,23 @@
                     maxOptions: 1000,
                 });
 
+                // Initialize Product Select
+                productSelectInstance = new TomSelect('#product_id', {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: "All Products",
+                    options: productData.map(p => ({
+                        value: p.id,
+                        text: p.name
+                    })),
+                    searchField: ['text'],
+                    maxOptions: 500,
+                });
+
                 // Proper change binding
                 wardSelectInstance.on('change', fetchAnalyticsData);
                 familySelectInstance.on('change', fetchAnalyticsData);
+                productSelectInstance.on('change', fetchAnalyticsData);
 
             } catch (error) {
                 console.error("Failed to load filter dropdowns", error);
@@ -479,12 +525,18 @@
             const wardId = document.getElementById('ward_id').value;
             const familyId = document.getElementById('family_id').value;
             const payment = document.getElementById('payment_method').value;
+            const productId = document.getElementById('product_id').value;
+            const minAmount = document.getElementById('min_amount').value;
+            const maxAmount = document.getElementById('max_amount').value;
 
             if (start) params.append('start_date', start);
             if (end) params.append('end_date', end);
             if (wardId) params.append('ward_id', wardId);
             if (familyId) params.append('family_id', familyId);
             if (payment) params.append('payment_method', payment);
+            if (productId) params.append('product_id', productId);
+            if (minAmount) params.append('min_amount', minAmount);
+            if (maxAmount) params.append('max_amount', maxAmount);
 
             return params.toString();
         }

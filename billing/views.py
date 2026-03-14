@@ -57,6 +57,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         ward_id = self.request.query_params.get('ward_id')
         family_id = self.request.query_params.get('family_id')
         payment_method = self.request.query_params.get('payment_method')
+        product_id = self.request.query_params.get('product_id')
+        min_amount = self.request.query_params.get('min_amount')
+        max_amount = self.request.query_params.get('max_amount')
 
         if start_date:
             queryset = queryset.filter(date__date__gte=start_date)
@@ -68,6 +71,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(family_id=family_id)
         if payment_method:
             queryset = queryset.filter(payment_method=payment_method)
+        if product_id:
+            queryset = queryset.filter(items__product_id=product_id).distinct()
+        if min_amount:
+            queryset = queryset.filter(total_amount__gte=min_amount)
+        if max_amount:
+            queryset = queryset.filter(total_amount__lte=max_amount)
 
         return queryset
 
@@ -107,6 +116,9 @@ class AnalyticsViewSet(viewsets.ViewSet):
         ward_id = request.query_params.get('ward_id')
         family_id = request.query_params.get('family_id')
         payment_method = request.query_params.get('payment_method')
+        product_id = request.query_params.get('product_id')
+        min_amount = request.query_params.get('min_amount')
+        max_amount = request.query_params.get('max_amount')
 
         if start_date:
             invoices = invoices.filter(date__date__gte=start_date)
@@ -118,6 +130,12 @@ class AnalyticsViewSet(viewsets.ViewSet):
             invoices = invoices.filter(family_id=family_id)
         if payment_method:
             invoices = invoices.filter(payment_method=payment_method)
+        if product_id:
+            invoices = invoices.filter(items__product_id=product_id).distinct()
+        if min_amount:
+            invoices = invoices.filter(total_amount__gte=min_amount)
+        if max_amount:
+            invoices = invoices.filter(total_amount__lte=max_amount)
 
         return invoices
 

@@ -10,6 +10,7 @@ const summaryTotal = document.getElementById('summaryTotal');
 
 let wardSelectInstance = null;
 let familySelectInstance = null;
+let productSelectInstance = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Search (debounced) - now filters locally after fetching
@@ -25,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('start_date').addEventListener('change', loadInvoices);
     document.getElementById('end_date').addEventListener('change', loadInvoices);
     document.getElementById('payment_method').addEventListener('change', loadInvoices);
+    document.getElementById('min_amount').addEventListener('change', loadInvoices);
+    document.getElementById('max_amount').addEventListener('change', loadInvoices);
 
     await loadDropdowns();
     await loadInvoices();
@@ -34,24 +37,31 @@ function resetFilters() {
     document.getElementById('filterForm').reset();
 
     if (wardSelectInstance) {
-        wardSelectInstance.setValue('', true); // silent
+        wardSelectInstance.setValue('', true);
     }
     if (familySelectInstance) {
-        familySelectInstance.setValue('', true); // silent
+        familySelectInstance.setValue('', true);
     }
+    if (productSelectInstance) {
+        productSelectInstance.setValue('', true);
+    }
+    document.getElementById('min_amount').value = '';
+    document.getElementById('max_amount').value = '';
 
     loadInvoices();
 }
 
 async function loadDropdowns() {
     try {
-        const [wardRes, familyRes] = await Promise.all([
+        const [wardRes, familyRes, productRes] = await Promise.all([
             fetchAPI('/wards/'),
-            fetchAPI('/families/')
+            fetchAPI('/families/'),
+            fetchAPI('/products/')
         ]);
 
         if (wardSelectInstance) wardSelectInstance.destroy();
         if (familySelectInstance) familySelectInstance.destroy();
+        if (productSelectInstance) productSelectInstance.destroy();
 
         wardSelectInstance = new TomSelect('#ward_id', {
             create: false,
@@ -71,8 +81,18 @@ async function loadDropdowns() {
             maxOptions: 1000,
         });
 
+        productSelectInstance = new TomSelect('#product_id', {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: "All Products",
+            options: productRes.map(p => ({ value: p.id, text: p.name })),
+            searchField: ['text'],
+            maxOptions: 500,
+        });
+
         wardSelectInstance.on('change', loadInvoices);
         familySelectInstance.on('change', loadInvoices);
+        productSelectInstance.on('change', loadInvoices);
 
     } catch (error) {
         console.error("Failed to load filter dropdowns", error);
@@ -86,12 +106,18 @@ function getFilterParams() {
     const wardId = document.getElementById('ward_id').value;
     const familyId = document.getElementById('family_id').value;
     const payment = document.getElementById('payment_method').value;
+    const productId = document.getElementById('product_id').value;
+    const minAmount = document.getElementById('min_amount').value;
+    const maxAmount = document.getElementById('max_amount').value;
 
     if (start) params.append('start_date', start);
     if (end) params.append('end_date', end);
     if (wardId) params.append('ward_id', wardId);
     if (familyId) params.append('family_id', familyId);
     if (payment) params.append('payment_method', payment);
+    if (productId) params.append('product_id', productId);
+    if (minAmount) params.append('min_amount', minAmount);
+    if (maxAmount) params.append('max_amount', maxAmount);
 
     return params.toString();
 }

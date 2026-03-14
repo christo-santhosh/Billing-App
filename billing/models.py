@@ -25,7 +25,7 @@ class Family(models.Model):
     family_name = models.CharField(max_length=100)
     head_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, validators=[phone_regex])
-    ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name='families')
+    ward = models.ForeignKey(Ward, on_delete=models.PROTECT, related_name='families')
 
     def __str__(self):
         return self.family_name
@@ -46,7 +46,7 @@ class Invoice(models.Model):
         ('UPI', 'UPI'),
         ('CARD', 'Card'),
     ]
-    family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='invoices')
+    family = models.ForeignKey(Family, on_delete=models.PROTECT, related_name='invoices')
     date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='CASH')
