@@ -6,7 +6,7 @@ from decouple import config, Csv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security: loaded from .env file (never commit secrets to Git!)
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-replace-this-with-a-real-secret-key-for-development')
+SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
