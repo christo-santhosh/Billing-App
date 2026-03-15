@@ -7,10 +7,11 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import FileResponse
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, F, Subquery, OuterRef, DecimalField
+from django.db.models.functions import Coalesce
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from datetime import datetime
-from .models import Ward, Family, Product, Invoice, StoreSettings
+from .models import Ward, Family, Product, Invoice, InvoiceItem, StoreSettings
 from .serializers import WardSerializer, FamilySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, StoreSettingsSerializer
 from .utils import generate_invoice_pdf, generate_whatsapp_link
 from .report_utils import generate_analytics_report_pdf
@@ -108,7 +109,9 @@ class AnalyticsViewSet(viewsets.ViewSet):
     """
 
     def _get_filtered_invoices(self, request):
-        """Helper method to filter invoices based on query params."""
+        """Helper method to filter invoices based on query params.
+        Returns a tuple of (invoices_queryset, product_id_or_None).
+        """
         invoices = Invoice.objects.all()
 
         start_date = request.query_params.get('start_date')
@@ -137,21 +140,46 @@ class AnalyticsViewSet(viewsets.ViewSet):
         if max_amount:
             invoices = invoices.filter(total_amount__lte=max_amount)
 
-        return invoices
+        return invoices, product_id
+
+    def _get_product_revenue_annotation(self, product_id):
+        """Returns an annotation that computes revenue from a specific product's items only."""
+        return Coalesce(
+            Subquery(
+                InvoiceItem.objects.filter(
+                    invoice=OuterRef('pk'),
+                    product_id=product_id
+                ).values('invoice').annotate(
+                    item_revenue=Sum(F('quantity') * F('price'))
+                ).values('item_revenue')[:1],
+                output_field=DecimalField()
+            ),
+            0,
+            output_field=DecimalField()
+        )
 
     @action(detail=False, methods=['get'])
     def time_based_revenue(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
-        # Truncate by day so the frontend can group it however it wants based on the date range
-        # For 'all time' or 'this year', daily might be too granular, but let the frontend handle aggregation
-        # or we return daily and let them chart it. We'll return dates for flexibility.
         from django.db.models.functions import TruncDate
 
-        daily = invoices.annotate(day=TruncDate('date')).values('day').annotate(
-            revenue=Sum('total_amount'),
-            count=Count('id')
-        ).order_by('day')  # Order by day ascending for charts
+        if product_id:
+            # When filtering by product, compute revenue from that product's items only
+            items = InvoiceItem.objects.filter(
+                invoice__in=invoices, product_id=product_id
+            )
+            daily = items.annotate(
+                day=TruncDate('invoice__date')
+            ).values('day').annotate(
+                revenue=Sum(F('quantity') * F('price')),
+                count=Count('invoice_id', distinct=True)
+            ).order_by('day')
+        else:
+            daily = invoices.annotate(day=TruncDate('date')).values('day').annotate(
+                revenue=Sum('total_amount'),
+                count=Count('id')
+            ).order_by('day')
 
         return Response({
             'trend': daily,
@@ -159,18 +187,28 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def ward_wise_analysis(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
-        # Aggregate revenue and count per ward based on the filtered invoices
-        ward_data = invoices.values('family__ward__ward_name').annotate(
-            total_revenue=Sum('total_amount'),
-            purchase_count=Count('id')
-        ).order_by('-total_revenue')
+        if product_id:
+            items = InvoiceItem.objects.filter(
+                invoice__in=invoices, product_id=product_id
+            )
+            ward_data = items.values(
+                ward_name=F('invoice__family__ward__ward_name')
+            ).annotate(
+                total_revenue=Sum(F('quantity') * F('price')),
+                purchase_count=Count('invoice_id', distinct=True)
+            ).order_by('-total_revenue')
+        else:
+            ward_data = invoices.values('family__ward__ward_name').annotate(
+                total_revenue=Sum('total_amount'),
+                purchase_count=Count('id')
+            ).order_by('-total_revenue')
 
         formatted_ward_data = []
         for w in ward_data:
             formatted_ward_data.append({
-                'ward_name': w['family__ward__ward_name'],
+                'ward_name': w.get('ward_name') or w.get('family__ward__ward_name'),
                 'total_revenue': w['total_revenue'],
                 'purchase_count': w['purchase_count']
             })
@@ -181,13 +219,12 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def top_products(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
-        from .models import InvoiceItem
         items = InvoiceItem.objects.filter(invoice__in=invoices)
+        if product_id:
+            items = items.filter(product_id=product_id)
 
-        # Aggregate by product name
-        from django.db.models import F
         limit_param = request.query_params.get('limit')
         product_data = items.values('product__name').annotate(
             total_quantity=Sum('quantity'),
@@ -203,29 +240,63 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def top_families(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
         limit_param = request.query_params.get('limit')
-        family_data = invoices.values('family__family_name', 'family__head_name').annotate(
-            total_revenue=Sum('total_amount'),
-            purchase_count=Count('id')
-        ).order_by('-total_revenue')
+
+        if product_id:
+            items = InvoiceItem.objects.filter(
+                invoice__in=invoices, product_id=product_id
+            )
+            family_data = items.values(
+                family_name=F('invoice__family__family_name'),
+                head_name=F('invoice__family__head_name')
+            ).annotate(
+                total_revenue=Sum(F('quantity') * F('price')),
+                purchase_count=Count('invoice_id', distinct=True)
+            ).order_by('-total_revenue')
+        else:
+            family_data = invoices.values('family__family_name', 'family__head_name').annotate(
+                total_revenue=Sum('total_amount'),
+                purchase_count=Count('id')
+            ).order_by('-total_revenue')
 
         if limit_param != 'all':
             family_data = family_data[:10]
 
+        # Normalize field names for the response
+        result = []
+        for f in family_data:
+            result.append({
+                'family__family_name': f.get('family__family_name') or f.get('family_name'),
+                'family__head_name': f.get('family__head_name') or f.get('head_name'),
+                'total_revenue': f['total_revenue'],
+                'purchase_count': f['purchase_count']
+            })
+
         return Response({
-            'top_families': list(family_data)
+            'top_families': result
         })
 
     @action(detail=False, methods=['get'])
     def payment_methods(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
-        payment_data = invoices.values('payment_method').annotate(
-            count=Count('id'),
-            total_revenue=Sum('total_amount')
-        ).order_by('-count')
+        if product_id:
+            items = InvoiceItem.objects.filter(
+                invoice__in=invoices, product_id=product_id
+            )
+            payment_data = items.values(
+                payment_method=F('invoice__payment_method')
+            ).annotate(
+                count=Count('invoice_id', distinct=True),
+                total_revenue=Sum(F('quantity') * F('price'))
+            ).order_by('-count')
+        else:
+            payment_data = invoices.values('payment_method').annotate(
+                count=Count('id'),
+                total_revenue=Sum('total_amount')
+            ).order_by('-count')
 
         return Response({
             'payment_distribution': list(payment_data)
@@ -233,7 +304,7 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def download_report(self, request):
-        invoices = self._get_filtered_invoices(request)
+        invoices, product_id = self._get_filtered_invoices(request)
 
         pdf_buffer = generate_analytics_report_pdf(
             invoices, request.query_params)

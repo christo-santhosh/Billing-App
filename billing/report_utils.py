@@ -109,9 +109,20 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
     elements.append(Spacer(1, 15))
 
     # --- AGGREGATE SUMMARY ---
+    product_id = request_params.get('product_id')
     total_invoices = invoices_queryset.count()
-    total_revenue = invoices_queryset.aggregate(
-        total=Sum('total_amount'))['total'] or 0
+
+    if product_id:
+        # When filtering by product, compute revenue from that product's items only
+        product_items = InvoiceItem.objects.filter(
+            invoice__in=invoices_queryset, product_id=product_id
+        )
+        total_revenue = product_items.aggregate(
+            total=Sum(F('quantity') * F('price'))
+        )['total'] or 0
+    else:
+        total_revenue = invoices_queryset.aggregate(
+            total=Sum('total_amount'))['total'] or 0
 
     summary_data = [
         ["Total Transactions", "Total Revenue Generated"],
@@ -131,10 +142,21 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
     elements.append(summary_table)
 
     # ─── WARD PERFORMANCE ──────────────────────────────────────────────
-    ward_data = invoices_queryset.values('family__ward__ward_name').annotate(
-        total_revenue=Sum('total_amount'),
-        purchase_count=Count('id')
-    ).order_by('-total_revenue')
+    if product_id:
+        ward_items = InvoiceItem.objects.filter(
+            invoice__in=invoices_queryset, product_id=product_id
+        )
+        ward_data = ward_items.values(
+            ward_name=F('invoice__family__ward__ward_name')
+        ).annotate(
+            total_revenue=Sum(F('quantity') * F('price')),
+            purchase_count=Count('invoice_id', distinct=True)
+        ).order_by('-total_revenue')
+    else:
+        ward_data = invoices_queryset.values('family__ward__ward_name').annotate(
+            total_revenue=Sum('total_amount'),
+            purchase_count=Count('id')
+        ).order_by('-total_revenue')
 
     if ward_data:
         elements.append(
@@ -143,7 +165,7 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
         for idx, w in enumerate(ward_data, start=1):
             w_table_data.append([
                 str(idx),
-                w['family__ward__ward_name'] or 'Unassigned',
+                w.get('ward_name') or w.get('family__ward__ward_name') or 'Unassigned',
                 str(w['purchase_count']),
                 f"Rs. {w['total_revenue']:,.2f}"
             ])
@@ -152,10 +174,22 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
             w_table_data, colWidths=['10%', '40%', '25%', '25%']))
 
     # ─── TOP FAMILIES ──────────────────────────────────────────────────
-    family_data = invoices_queryset.values('family__family_name', 'family__head_name').annotate(
-        total_revenue=Sum('total_amount'),
-        purchase_count=Count('id')
-    ).order_by('-total_revenue')[:15]
+    if product_id:
+        family_items = InvoiceItem.objects.filter(
+            invoice__in=invoices_queryset, product_id=product_id
+        )
+        family_data = family_items.values(
+            family_name=F('invoice__family__family_name'),
+            head_name=F('invoice__family__head_name')
+        ).annotate(
+            total_revenue=Sum(F('quantity') * F('price')),
+            purchase_count=Count('invoice_id', distinct=True)
+        ).order_by('-total_revenue')[:15]
+    else:
+        family_data = invoices_queryset.values('family__family_name', 'family__head_name').annotate(
+            total_revenue=Sum('total_amount'),
+            purchase_count=Count('id')
+        ).order_by('-total_revenue')[:15]
 
     if family_data:
         elements.append(
@@ -163,9 +197,9 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
         f_table_data = [['#', 'Family Name / Head',
                          'Purchases', 'Revenue Generated']]
         for idx, f in enumerate(family_data, start=1):
-            family_name = f['family__family_name'] or 'Unknown'
-            head_name = f" (Head: {f['family__head_name']})" if f.get(
-                'family__head_name') else ""
+            family_name = f.get('family__family_name') or f.get('family_name') or 'Unknown'
+            head = f.get('family__head_name') or f.get('head_name')
+            head_name = f" (Head: {head})" if head else ""
             f_table_data.append([
                 str(idx),
                 f"{family_name}{head_name}",
@@ -178,6 +212,8 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
 
     # ─── TOP PRODUCTS ──────────────────────────────────────────────────
     items = InvoiceItem.objects.filter(invoice__in=invoices_queryset)
+    if product_id:
+        items = items.filter(product_id=product_id)
     product_data = items.values('product__name').annotate(
         total_quantity=Sum('quantity'),
         total_revenue=Sum(F('quantity') * F('price'))
@@ -201,10 +237,21 @@ def generate_analytics_report_pdf(invoices_queryset, request_params):
             p_table_data, colWidths=['10%', '40%', '25%', '25%']))
 
     # ─── PAYMENT METHODS ───────────────────────────────────────────────
-    payment_data = invoices_queryset.values('payment_method').annotate(
-        count=Count('id'),
-        total_revenue=Sum('total_amount')
-    ).order_by('-count')
+    if product_id:
+        pay_items = InvoiceItem.objects.filter(
+            invoice__in=invoices_queryset, product_id=product_id
+        )
+        payment_data = pay_items.values(
+            payment_method=F('invoice__payment_method')
+        ).annotate(
+            count=Count('invoice_id', distinct=True),
+            total_revenue=Sum(F('quantity') * F('price'))
+        ).order_by('-count')
+    else:
+        payment_data = invoices_queryset.values('payment_method').annotate(
+            count=Count('id'),
+            total_revenue=Sum('total_amount')
+        ).order_by('-count')
 
     if payment_data:
         elements.append(Paragraph("Payment Methods", section_header_style))
