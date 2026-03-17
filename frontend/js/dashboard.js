@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (hour >= 17) greeting = 'Good Evening';
     document.getElementById('greetingTime').textContent = greeting;
 
+    // Show Admin Panel button if superuser
+    if (localStorage.getItem('is_superuser') === 'true') {
+        const adminBtn = document.getElementById('adminPanelBtn');
+        if (adminBtn) adminBtn.style.display = 'flex';
+    }
+
     // Load Dashboard Data
     try {
         const wardAnalysis = await fetchAPI('/analytics/ward_wise_analysis/');

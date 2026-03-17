@@ -23,6 +23,11 @@ async function checkAuth() {
         } else {
             const data = await response.json();
             console.log("Logged in as:", data.username);
+            if (data.is_superuser) {
+                localStorage.setItem('is_superuser', 'true');
+            } else {
+                localStorage.removeItem('is_superuser');
+            }
             
             // Authentication passed -> Reveal the body!
             document.documentElement.removeChild(style);

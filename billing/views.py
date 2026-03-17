@@ -346,7 +346,9 @@ class CheckSessionView(APIView):
         if request.user.is_authenticated:
             return Response({
                 "isAuthenticated": True,
-                "username": request.user.username
+                "username": request.user.username,
+                "is_superuser": request.user.is_superuser,
+                "is_staff": request.user.is_staff
             })
         return Response({"isAuthenticated": False}, status=401)
 
