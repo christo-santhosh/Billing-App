@@ -1,0 +1,115 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | AgroBilling Admin{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}">AgroBilling Administration</a>
+</div>
+{% endblock %}
+
+{# Remove dark mode completely - forces light mode #}
+{% block dark-mode-vars %}{% endblock %}
+
+{% block usertools %}
+{% if has_permission %}
+<div id="user-tools">
+  {% block userlinks %}
+  {% if site_url %}
+  <a href="{{ site_url }}">View Dashboard</a> /
+  {% endif %}
+  <form id="logout-form" method="post" action="{% url 'admin:logout' %}" style="display: inline-block; margin-left: 4px">
+    {% csrf_token %}
+    <button type="submit" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font: inherit; text-decoration: underline;">
+      Log out
+    </button>
+  </form>
+  {% endblock %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  /* Override Django admin's default blue with our AgroBilling green */
+  :root {
+    --primary: #16a249;
+    --secondary: #16a249;
+    --accent: #15803d;
+    --link-fg: #15803d;
+    --link-hover-color: #16a249;
+    --link-selected-fg: #16a249;
+    --header-color: #ffffff;
+    --header-branding-color: #ffffff;
+    --header-bg: #16a249;
+    --header-link-color: #ffffff;
+    --breadcrumbs-fg: #ffffff;
+    --breadcrumbs-link-fg: #dcfce7;
+    --breadcrumbs-bg: #15803d;
+    --button-bg: #16a249;
+    --button-hover-bg: #15803d;
+    --default-button-bg: #16a249;
+    --default-button-hover-bg: #15803d;
+    --close-button-bg: #dc2626;
+    --close-button-hover-bg: #b91c1c;
+    --delete-button-bg: #dc2626;
+    --delete-button-hover-bg: #b91c1c;
+    --selected-bg: #f0fdf4;
+    --selected-row: #f0fdf4;
+    --body-bg: #f8faf9;
+    --darkened-bg: #f0f4f2;
+  }
+
+  /* Force light mode always */
+  html[data-theme="dark"] {
+    --primary: #16a249;
+    --secondary: #16a249;
+    --accent: #15803d;
+    --link-fg: #15803d;
+    --link-hover-color: #16a249;
+    --link-selected-fg: #16a249;
+    --header-color: #ffffff;
+    --header-branding-color: #ffffff;
+    --header-bg: #16a249;
+    --header-link-color: #ffffff;
+    --breadcrumbs-fg: #ffffff;
+    --breadcrumbs-link-fg: #dcfce7;
+    --breadcrumbs-bg: #15803d;
+    --button-bg: #16a249;
+    --button-hover-bg: #15803d;
+    --default-button-bg: #16a249;
+    --default-button-hover-bg: #15803d;
+    --body-bg: #f8faf9;
+    --body-fg: #333;
+    --darkened-bg: #f0f4f2;
+    --selected-bg: #f0fdf4;
+    --selected-row: #f0fdf4;
+  }
+
+  /* Module headers and captions */
+  .module h2,
+  .module caption,
+  .inline-related h3 {
+    background: #16a249 !important;
+    color: #fff !important;
+  }
+
+  /* Object tools links */
+  .object-tools a:link,
+  .object-tools a:visited {
+    background: #15803d !important;
+  }
+  .object-tools a:hover,
+  .object-tools a:focus {
+    background: #16a249 !important;
+  }
+
+  /* Branding link color */
+  #site-name a {
+    color: #ffffff !important;
+  }
+</style>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

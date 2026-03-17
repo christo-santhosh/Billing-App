@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | AgroBilling Admin{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">AgroBilling Administration</a></div>
+{% endblock %}
+
+{# Remove dark mode completely #}
+{% block dark-mode-vars %}{% endblock %}
+
+{% block usertools %}
+{% if has_permission %}
+<div id="user-tools">
+    {% block userlinks %}
+        {% if site_url %}
+            <a href="{{ site_url }}">View Dashboard</a> /
+        {% endif %}
+        <form id="logout-form" method="post" action="{% url 'admin:logout' %}" style="display: inline-block; margin-left: 4px;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font: inherit; text-decoration: underline;">Log out</button>
+        </form>
+    {% endblock %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Change primary blue color to our green (#16a249) */
+    :root {
+        --primary: #16a249;
+        --secondary: #16a249;
+        --link-fg: #15803d;
+        --link-hover-color: #16a249;
+        --link-selected-fg: #16a249;
+        --header-color: #ffffff;
+        --header-branding-color: #ffffff;
+        --header-bg: #16a249;
+        --header-link-color: #ffffff;
+        --button-bg: #16a249;
+        --button-hover-bg: #15803d;
+        --default-button-bg: #16a249;
+        --default-button-hover-bg: #15803d;
+        --selected-bg: #f0fdf4;
+        --selected-row: #f0fdf4;
+    }
+</style>
+
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
