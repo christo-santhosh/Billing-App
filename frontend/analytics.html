@@ -248,17 +248,6 @@
                         <select id="product_id" name="product_id"></select>
                     </div>
 
-                    <!-- Min Amount -->
-                    <div style="display:flex; flex-direction:column; gap:6px;">
-                        <label class="filter-label">MIN AMOUNT (₹)</label>
-                        <input type="number" id="min_amount" name="min_amount" class="filter-input" placeholder="0.00" min="0" step="0.01">
-                    </div>
-
-                    <!-- Max Amount -->
-                    <div style="display:flex; flex-direction:column; gap:6px;">
-                        <label class="filter-label">MAX AMOUNT (₹)</label>
-                        <input type="number" id="max_amount" name="max_amount" class="filter-input" placeholder="No limit" min="0" step="0.01">
-                    </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
@@ -417,8 +406,6 @@
             document.getElementById('start_date').addEventListener('change', fetchAnalyticsData);
             document.getElementById('end_date').addEventListener('change', fetchAnalyticsData);
             document.getElementById('payment_method').addEventListener('change', fetchAnalyticsData);
-            document.getElementById('min_amount').addEventListener('change', fetchAnalyticsData);
-            document.getElementById('max_amount').addEventListener('change', fetchAnalyticsData);
         });
 
         function resetFilters() {
@@ -434,8 +421,6 @@
             if (productSelectInstance) {
                 productSelectInstance.setValue('', true);
             }
-            document.getElementById('min_amount').value = '';
-            document.getElementById('max_amount').value = '';
 
             fetchAnalyticsData();
         }
@@ -526,8 +511,6 @@
             const familyId = document.getElementById('family_id').value;
             const payment = document.getElementById('payment_method').value;
             const productId = document.getElementById('product_id').value;
-            const minAmount = document.getElementById('min_amount').value;
-            const maxAmount = document.getElementById('max_amount').value;
 
             if (start) params.append('start_date', start);
             if (end) params.append('end_date', end);
@@ -535,8 +518,6 @@
             if (familyId) params.append('family_id', familyId);
             if (payment) params.append('payment_method', payment);
             if (productId) params.append('product_id', productId);
-            if (minAmount) params.append('min_amount', minAmount);
-            if (maxAmount) params.append('max_amount', maxAmount);
 
             return params.toString();
         }
